@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChemDash — Air Blower</title>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --gold-800:#463B33;--gold-700:#763D16;--gold-600:#BB6E3D;--gold-500:#E29C57;
+  --gold-400:#F9A471;--gold-300:#FCEEE5;--gold-200:#E9E3DE;--gold-100:#F7F6F2;
+  --text-primary:#32302F;--text-secondary:#615E5C;
+  --status-ok:#3A7D52;--status-ok-bg:#E5F0E8;
+  --status-advisory:#C4890E;--status-advisory-bg:#FAF0E0;
+  --status-alarm:#D4432A;--status-alarm-bg:#FCEBEB;
+  --status-trip:#7a1d14;--status-trip-bg:#f5d5d1;
+  --surface-page:#F7F6F2;--surface-card:#FFFFFF;--surface-sidebar:#463B33;
+  --border-card:#E9E3DE;
+  --shadow-card:0 1px 7px rgba(0,0,0,0.05),0 0 16px rgba(0,0,0,0.05);
+  --shadow-sidebar:2px 0 8px rgba(0,0,0,0.06);
+  --shadow-topbar:0 2px 6px rgba(0,0,0,0.04);
+  --radius-card:16px;--radius-status:12px;--radius-alert:10px;--radius-nav:8px;
+  --sidebar-width:180px;--topbar-height:56px;--content-margin:24px;--tile-gap:16px;
+  --font-ui:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,sans-serif;
+  --font-data:'IBM Plex Mono','SF Mono','Consolas',monospace;
+}
+body{font-family:var(--font-ui);background:var(--surface-page);color:var(--text-primary);overflow:hidden;height:100vh}
+
+/* SHELL */
+.shell{display:grid;grid-template-columns:var(--sidebar-width) 1fr;grid-template-rows:var(--topbar-height) 1fr;height:100vh}
+
+/* SIDEBAR */
+.sidebar{grid-row:1/-1;background:var(--surface-sidebar);box-shadow:var(--shadow-sidebar);display:flex;flex-direction:column;padding-top:16px;z-index:10}
+.sidebar-header{display:flex;align-items:center;gap:10px;padding:0 16px;margin-bottom:32px}
+.sidebar-logo{width:36px;height:36px;border-radius:50%;background:var(--gold-500);flex-shrink:0;text-decoration:none}
+.sidebar-title{font-size:15px;font-weight:600;color:#FFF;letter-spacing:0.3px}
+.nav-section-label{font-size:10px;font-weight:500;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1.2px;padding:0 16px;margin-bottom:8px;margin-top:8px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 16px;border-radius:var(--radius-nav);margin:0 8px 2px 8px;cursor:pointer;transition:background 0.15s;text-decoration:none;color:rgba(255,255,255,0.6);font-size:13px;font-weight:500}
+.nav-item:hover{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.85)}
+.nav-item.active{background:rgba(255,255,255,0.12);color:#FFF}
+.nav-icon{width:18px;height:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.nav-icon svg{width:18px;height:18px}
+.sidebar-spacer{flex:1}
+
+/* TOPBAR */
+.topbar{background:var(--surface-card);box-shadow:var(--shadow-topbar);display:flex;align-items:center;padding:0 var(--content-margin);justify-content:space-between;z-index:5}
+.breadcrumb{font-size:13px;color:var(--text-secondary)}
+.breadcrumb a{color:var(--text-secondary);text-decoration:none}
+.breadcrumb a:hover{color:var(--gold-600)}
+.breadcrumb span{margin:0 6px;opacity:0.4}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--gold-600)}
+
+/* CONTENT */
+.content{padding:var(--content-margin);overflow-y:auto}
+
+/* TABS */
+.tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border-card)}
+.tab{padding:10px 16px;font-size:13px;font-weight:500;color:var(--text-secondary);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:color 0.15s}
+.tab:hover{color:var(--text-primary)}
+.tab.active{color:var(--gold-700);border-bottom-color:var(--gold-600)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* CARDS */
+.card{background:var(--surface-card);border:1px solid var(--border-card);border-radius:var(--radius-card);box-shadow:var(--shadow-card);margin-bottom:var(--tile-gap)}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--border-card);font-weight:600;font-size:14px;display:flex;align-items:center;justify-content:space-between}
+.card-body{padding:20px}
+
+/* KPI */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:var(--tile-gap)}
+.kpi-tile{background:var(--surface-card);border:1px solid var(--border-card);border-radius:var(--radius-card);padding:12px 16px;transition:border-color 0.15s}
+.kpi-tile:hover{border-color:var(--gold-500)}
+.kpi-tile .kpi-label{font-size:11px;font-weight:500;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.03em}
+.kpi-tile .kpi-value{font-family:var(--font-data);font-size:20px;font-weight:500;margin-top:4px}
+.kpi-tile .kpi-limit{font-size:10px;color:var(--text-secondary);margin-top:2px}
+.kpi-tile.headline{background:var(--gold-300);border-color:var(--gold-500)}
+
+/* STATUS BANNER */
+.banner{border-left:4px solid var(--status-ok);padding:16px 20px;border-radius:var(--radius-alert);background:var(--surface-card);margin-bottom:var(--tile-gap);box-shadow:var(--shadow-card)}
+.banner h2{margin:0 0 4px 0;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-secondary)}
+.banner .banner-primary{font-size:18px;font-weight:700}
+.banner .banner-detail{margin-top:4px;font-size:13px;color:var(--text-secondary)}
+.banner.status-ok{border-left-color:var(--status-ok)}.banner.status-ok .banner-primary{color:var(--status-ok)}
+.banner.status-advisory{border-left-color:var(--status-advisory);background:var(--status-advisory-bg)}.banner.status-advisory .banner-primary{color:var(--status-advisory)}
+.banner.status-alarm{border-left-color:var(--status-alarm);background:var(--status-alarm-bg)}.banner.status-alarm .banner-primary{color:var(--status-alarm)}
+.banner.status-trip{border-left-color:var(--status-trip);background:var(--status-trip-bg)}.banner.status-trip .banner-primary{color:var(--status-trip)}
+.alert-item{padding:8px 12px;border-radius:6px;margin-top:8px;font-size:13px}
+.alert-item.severity-advisory{background:var(--status-advisory-bg);color:var(--status-advisory);border-left:3px solid var(--status-advisory)}
+.alert-item.severity-alarm{background:var(--status-alarm-bg);color:var(--status-alarm);border-left:3px solid var(--status-alarm)}
+.alert-item.severity-trip{background:var(--status-trip-bg);color:var(--status-trip);border-left:3px solid var(--status-trip)}
+.alert-item .src{font-size:10px;color:var(--text-secondary);display:block;margin-top:2px}
+
+/* CHARTS */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--tile-gap)}
+@media(max-width:1100px){.chart-grid{grid-template-columns:1fr}}
+.chart-box{background:var(--surface-card);border:1px solid var(--border-card);border-radius:var(--radius-card);padding:16px;box-shadow:var(--shadow-card)}
+.chart-box h4{margin:0 0 12px 0;font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.03em}
+.chart-canvas-wrap{position:relative;height:220px}
+
+/* TABLE */
+table.data{width:100%;border-collapse:collapse;font-size:13px}
+table.data th,table.data td{padding:8px 12px;border-bottom:1px solid var(--border-card);text-align:left}
+table.data th{font-weight:600;color:var(--text-secondary);text-transform:uppercase;font-size:11px;letter-spacing:0.03em;background:var(--gold-100)}
+table.data td.num{font-family:var(--font-data);text-align:right}
+.status-pill{display:inline-block;padding:2px 8px;border-radius:var(--radius-status);font-size:11px;font-weight:500}
+.status-pill.ok{background:var(--status-ok-bg);color:var(--status-ok)}
+.status-pill.advisory{background:var(--status-advisory-bg);color:var(--status-advisory)}
+.status-pill.alarm{background:var(--status-alarm-bg);color:var(--status-alarm)}
+.status-pill.trip{background:var(--status-trip-bg);color:var(--status-trip)}
+
+/* SIDEBAR CONFIG */
+.config-section{padding:0 16px;margin-bottom:16px}
+.config-section h3{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.4);margin:16px 0 8px 0;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.1)}
+.config-section h3:first-child{margin-top:0}
+.form-row{display:flex;flex-direction:column;margin-bottom:8px}
+.form-row label{font-size:11px;font-weight:500;color:rgba(255,255,255,0.5);margin-bottom:3px}
+.config-input{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:6px 10px;font-size:12px;color:#FFF;width:100%;font-family:var(--font-ui)}
+.config-input:focus{outline:none;border-color:var(--gold-500);background:rgba(255,255,255,0.12)}
+.config-input option{background:var(--surface-sidebar);color:#FFF}
+
+/* UPLOAD */
+.upload-box{border:2px dashed rgba(255,255,255,0.2);border-radius:10px;padding:12px;text-align:center;cursor:pointer;transition:background 150ms;display:block;margin:0 16px}
+.upload-box:hover{background:rgba(255,255,255,0.06);border-color:var(--gold-500)}
+.upload-box input{display:none}
+.upload-box .up-title{font-weight:600;color:var(--gold-400);font-size:13px}
+.upload-box .up-sub{font-size:11px;color:rgba(255,255,255,0.4);margin-top:4px}
+
+/* BUTTONS */
+.btn{background:var(--gold-600);color:#FFF;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font-ui);transition:background 0.15s}
+.btn:hover{background:var(--gold-700)}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:6px}
+.btn-outline{background:transparent;color:var(--gold-600);border:1px solid var(--gold-600)}
+.btn-outline:hover{background:var(--gold-300)}
+.btn-sidebar{background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.15);width:calc(100% - 32px);margin:4px 16px;border-radius:8px;padding:8px;font-size:12px;cursor:pointer;font-family:var(--font-ui)}
+.btn-sidebar:hover{background:rgba(255,255,255,0.15);color:#FFF}
+
+/* ACTION BAR */
+.action-bar{display:flex;gap:8px;margin-bottom:var(--tile-gap);flex-wrap:wrap}
+
+/* SUMMARY ROW */
+.summary-row{display:flex;gap:8px;flex-wrap:wrap}
+.summary-row .stat{background:var(--gold-100);padding:6px 12px;border-radius:8px;font-size:13px}
+.summary-row .stat strong{color:var(--gold-700);font-family:var(--font-data)}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:48px;color:var(--text-secondary)}
+.empty-state h3{margin:0 0 8px 0;color:var(--text-primary);font-weight:600}
+
+/* MANUAL PANEL */
+.manual-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:100}
+.manual-panel{position:fixed;top:0;right:0;width:560px;height:100vh;background:var(--surface-card);box-shadow:-4px 0 24px rgba(0,0,0,0.12);z-index:101;display:none;flex-direction:column}
+.manual-panel.open{display:flex}
+.manual-panel-header{padding:16px 20px;border-bottom:1px solid var(--border-card);display:flex;align-items:center;justify-content:space-between}
+.manual-panel-header h3{font-size:16px;font-weight:600}
+.manual-panel-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-secondary);padding:4px 8px}
+.manual-pdf-btn{background:var(--gold-500);color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font-ui);margin-right:8px}.manual-pdf-btn:hover{background:var(--gold-600)}
+
+.manual-panel-body{flex:1;overflow-y:auto;padding:20px;font-size:14px;line-height:1.6}
+.manual-panel-body h3{margin:20px 0 8px 0;font-size:15px;font-weight:600;color:var(--gold-700)}
+.manual-panel-body h3:first-child{margin-top:0}
+.manual-panel-body p{margin-bottom:12px}
+.manual-panel-body code{background:var(--gold-100);padding:2px 6px;border-radius:4px;font-family:var(--font-data);font-size:13px}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <a class="sidebar-logo" href="welcome-home.html" title="Home"></a>
+      <span class="sidebar-title">ChemDash</span>
+    </div>
+    <div class="nav-section-label">Navigation</div>
+    <a class="nav-item" href="welcome-home.html">
+      <span class="nav-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7.5L9 2l7 5.5V15a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 012 15V7.5z"/><path d="M6.5 16.5V10h5v6.5"/></svg></span>
+      Home
+    </a>
+    <a class="nav-item active" href="#">
+      <span class="nav-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="5.5" height="5.5" rx="1"/><rect x="10.5" y="2" width="5.5" height="5.5" rx="1"/><rect x="2" y="10.5" width="5.5" height="5.5" rx="1"/><rect x="10.5" y="10.5" width="5.5" height="5.5" rx="1"/></svg></span>
+      Dashboard
+    </a>
+    <div class="sidebar-spacer"></div>
+
+    <div class="nav-section-label">Data</div>
+    <label class="upload-box" for="csvInput">
+      <input type="file" id="csvInput" accept=".csv"/>
+      <div class="up-title">Upload CSV</div>
+      <div class="up-sub" id="upStatus">No file loaded</div>
+    </label>
+    <button class="btn-sidebar" id="loadDemoBtn" style="margin-top:6px">Load demo data</button>
+
+    <div class="config-section">
+      <h3>Settings</h3>
+      <div class="form-row"><label>Motor voltage (V)</label><input class="config-input" type="number" id="setV" value="4000" step="10"/></div>
+      <div class="form-row"><label>Power factor</label><input class="config-input" type="number" id="setPF" value="0.85" step="0.01"/></div>
+      <div class="form-row"><label>Atm pressure (bar)</label><input class="config-input" type="number" id="setPatm" value="0.93" step="0.01"/></div>
+      <div class="form-row"><label>Gas k</label><input class="config-input" type="number" id="setK" value="1.40" step="0.01"/></div>
+      <div class="form-row"><label>Min current (A)</label><input class="config-input" type="number" id="setIMin" value="10" step="1"/></div>
+      <div class="form-row"><label>T1 fallback (C)</label><input class="config-input" type="number" id="setT1FB" value="4.0" step="0.5"/></div>
+      <div class="form-row"><label>Blower mode</label>
+        <select class="config-input" id="setMode"><option value="auto">auto</option><option value="A">force A</option><option value="B">force B</option></select></div>
+      <div class="form-row"><label>Headline efficiency</label>
+        <select class="config-input" id="setEffMethod"><option value="polytropic">polytropic (PTC 10)</option><option value="isentropic">isentropic</option><option value="fluid">fluid-power</option></select></div>
+
+      <h3>Limits</h3>
+      <div class="form-row"><label>Vib advisory (mm/s)</label><input class="config-input" type="number" id="limVA" value="4.5" step="0.1"/></div>
+      <div class="form-row"><label>Vib alarm</label><input class="config-input" type="number" id="limVAL" value="7.1" step="0.1"/></div>
+      <div class="form-row"><label>Vib trip</label><input class="config-input" type="number" id="limVT" value="11.0" step="0.1"/></div>
+      <div class="form-row"><label>Brg advisory (C)</label><input class="config-input" type="number" id="limBA" value="70" step="1"/></div>
+      <div class="form-row"><label>Brg alarm</label><input class="config-input" type="number" id="limBAL" value="85" step="1"/></div>
+      <div class="form-row"><label>Brg trip</label><input class="config-input" type="number" id="limBT" value="95" step="1"/></div>
+      <div class="form-row"><label>Blower dP adv (bar)</label><input class="config-input" type="number" id="limDP" value="0.45" step="0.01"/></div>
+      <div class="form-row"><label>Filter dP adv (bar)</label><input class="config-input" type="number" id="limFilter" value="0.10" step="0.01"/></div>
+      <div class="form-row"><label>Bypass adv (%)</label><input class="config-input" type="number" id="limBypass" value="60" step="5"/></div>
+    </div>
+    <button class="btn-sidebar" id="recalcBtn">Recalculate</button>
+    <div style="height:16px"></div>
+  </nav>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="breadcrumb">
+      <a href="welcome-home.html">Home</a><span>/</span>Air Blower
+    </div>
+    <div class="topbar-right">
+      <div class="avatar"></div>
+    </div>
+  </header>
+
+  <!-- CONTENT -->
+  <main class="content">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px">
+      <h1 style="font-size:22px;font-weight:700">Air Blower — Performance & Health</h1>
+      <span style="font-size:12px;color:var(--text-secondary)">ASME PTC 10 · ISO 10816-3</span>
+    </div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:20px">Dual-train centrifugal blower · K-101 A/B</p>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="dashboard">Dashboard</button>
+      <button class="tab" data-tab="data">Data & Log</button>
+      <button class="tab" data-tab="about">About</button>
+    </div>
+
+    <!-- ═══ DASHBOARD TAB ═══ -->
+    <section class="tab-panel active" id="panel-dashboard">
+      <div class="action-bar">
+        <button class="btn btn-sm" id="btnExport" title="Export processed data to CSV">Export CSV</button>
+        <button class="btn btn-sm btn-outline" id="btnManual" title="View engineering manual">View Manual</button>
+      </div>
+
+      <div id="statusArea">
+        <div class="empty-state">
+          <h3>No data loaded</h3>
+          <p>Upload a CSV or click <em>Load demo data</em> in the sidebar.</p>
+        </div>
+      </div>
+
+      <div id="kpiArea" style="display:none">
+        <div class="kpi-row">
+          <div class="kpi-tile headline"><div class="kpi-label">Headline Efficiency (<span id="kpiEffMethod">polytropic</span>)</div><div class="kpi-value" id="kpiEffHeadline">—</div><div class="kpi-limit">ASME PTC 10</div></div>
+          <div class="kpi-tile"><div class="kpi-label">n polytropic</div><div class="kpi-value" id="kpiEffPoly">—</div><div class="kpi-limit">§5.4a · API 617</div></div>
+          <div class="kpi-tile"><div class="kpi-label">n isentropic</div><div class="kpi-value" id="kpiEffIsen">—</div><div class="kpi-limit">§5.4</div></div>
+          <div class="kpi-tile"><div class="kpi-label">n fluid (indicator)</div><div class="kpi-value" id="kpiEffFluid">—</div><div class="kpi-limit">trending only</div></div>
+        </div>
+        <div class="kpi-row">
+          <div class="kpi-tile"><div class="kpi-label">Active blower</div><div class="kpi-value" id="kpiActive">—</div><div class="kpi-limit">auto-detect by current</div></div>
+          <div class="kpi-tile"><div class="kpi-label">Shaft power</div><div class="kpi-value" id="kpiPower">—</div><div class="kpi-limit">sqrt(3)·V·I·PF/1000</div></div>
+          <div class="kpi-tile"><div class="kpi-label">Pressure ratio</div><div class="kpi-value" id="kpiPR">—</div><div class="kpi-limit">P2/P1 (bar abs)</div></div>
+          <div class="kpi-tile"><div class="kpi-label">Blower dP</div><div class="kpi-value" id="kpiDP">—</div><div class="kpi-limit" id="kpiDPlim">design &le; 0.45 bar</div></div>
+          <div class="kpi-tile"><div class="kpi-label">Flow</div><div class="kpi-value" id="kpiFlow">—</div><div class="kpi-limit">Nm3/hr</div></div>
+          <div class="kpi-tile"><div class="kpi-label">Max vibration</div><div class="kpi-value" id="kpiVib">—</div><div class="kpi-limit" id="kpiVibLim">ISO 10816-3 Group 1</div></div>
+          <div class="kpi-tile"><div class="kpi-label">Max bearing T</div><div class="kpi-value" id="kpiBrg">—</div><div class="kpi-limit" id="kpiBrgLim">advisory >= 70 C</div></div>
+          <div class="kpi-tile"><div class="kpi-label">T1 used</div><div class="kpi-value" id="kpiT1">—</div><div class="kpi-limit" id="kpiT1Src">source</div></div>
+        </div>
+
+        <div class="banner status-ok" id="statusBanner">
+          <h2>Overall Status</h2>
+          <div class="banner-primary" id="statusText">OK</div>
+          <div class="banner-detail" id="statusDetail">No active alerts.</div>
+          <div id="alertList"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">Trends<span style="font-weight:400;font-size:11px;color:var(--text-secondary);margin-left:8px">(batch mode)</span></div>
+          <div class="card-body">
+            <div class="chart-grid">
+              <div class="chart-box"><h4>Efficiency (%) — polytropic · isentropic · fluid</h4><div class="chart-canvas-wrap"><canvas id="chart-eff"></canvas></div></div>
+              <div class="chart-box"><h4>Shaft power (kW) & flow (Nm3/hr)</h4><div class="chart-canvas-wrap"><canvas id="chart-power"></canvas></div></div>
+              <div class="chart-box"><h4>Max vibration (mm/s)</h4><div class="chart-canvas-wrap"><canvas id="chart-vib"></canvas></div></div>
+              <div class="chart-box"><h4>Max bearing T (C) & dP (bar)</h4><div class="chart-canvas-wrap"><canvas id="chart-brg"></canvas></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ DATA TAB ═══ -->
+    <section class="tab-panel" id="panel-data">
+      <div class="card">
+        <div class="card-header">Batch summary</div>
+        <div class="card-body"><div class="summary-row" id="batchSummary"><div class="stat">No batch processed.</div></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header">Processed rows (most recent 50)</div>
+        <div class="card-body" style="overflow-x:auto">
+          <table class="data" id="resultTable">
+            <thead><tr><th>Timestamp</th><th>Bl.</th><th>Power (kW)</th><th>PR</th><th>dP (bar)</th><th>Flow</th><th>n_poly</th><th>n_isen</th><th>n_fluid</th><th>Vib (mm/s)</th><th>Brg (C)</th><th>Status</th></tr></thead>
+            <tbody><tr><td colspan="12" style="text-align:center;color:var(--text-secondary)">No rows processed.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ ABOUT TAB ═══ -->
+    <section class="tab-panel" id="panel-about">
+      <div class="card"><div class="card-body">
+        <h3 style="margin-top:0;font-size:15px;font-weight:600;color:var(--gold-700)">Formulas (mirrors engine.py)</h3>
+        <p><strong>Shaft power</strong>: P<sub>elec</sub> = sqrt(3)·V·I·PF / 1000 [kW]</p>
+        <p><strong>Pressure normalization</strong>: P1 = P_suction_kPaa/100; P2 = P_discharge_kPag/100 + P_atm -> bar absolute.</p>
+        <p><strong>Fluid power (indicator)</strong>: P_fluid = Q·dP / 36 [kW]. Hydraulic/incompressible formula; trending only.</p>
+        <p><strong>Isentropic efficiency</strong> (ASME PTC 10 §5.4): n_s = T1·[(P2/P1)^((k-1)/k) - 1] / (T2 - T1), T in Kelvin.</p>
+        <p><strong>Polytropic efficiency</strong> (ASME PTC 10 §5.4a · API 617): sigma = ln(T2/T1)/ln(P2/P1); n_p = ((k-1)/k)/sigma.</p>
+        <h3 style="font-size:15px;font-weight:600;color:var(--gold-700);margin-top:16px">Alert tiers</h3>
+        <p>Vibration follows <strong>ISO 10816-3 Group 1</strong> (large machines > 300 kW, rigid foundation): advisory at Zone B/C, alarm at C/D, trip at Zone D.</p>
+        <h3 style="font-size:15px;font-weight:600;color:var(--gold-700);margin-top:16px">Scope</h3>
+        <p>Reference-grade PoC. Not a control system, not SIS. Not a substitute for a formal ASME PTC 10 acceptance test.</p>
+        <p style="font-size:12px;color:var(--text-secondary);margin-top:8px">Efficiency values are <strong>not clamped</strong> to 0-100%. A value outside that range is a data-quality signal.</p>
+      </div></div>
+    </section>
+  </main>
+</div>
+
+<!-- MANUAL PANEL -->
+<div class="manual-overlay" id="manualOverlay"></div>
+<div class="manual-panel" id="manualPanel">
+  <div class="manual-panel-header">
+    <h3>Engineering Manual — Air Blower</h3>
+    <div style="display:flex;align-items:center;gap:4px"><button class="manual-pdf-btn" id="manualPdf">Download PDF</button><button class="manual-panel-close" id="manualClose">&times;</button></div>
+  </div>
+  <div class="manual-panel-body">
+    <h3>1. Purpose & Scope</h3>
+    <p>Dual-train centrifugal blower monitoring dashboard computing polytropic, isentropic, and fluid-power efficiencies per ASME PTC 10, with vibration monitoring per ISO 10816-3 Group 1 and bearing temperature tracking.</p>
+    <h3>2. Key Standards</h3>
+    <p><strong>ASME PTC 10</strong> — Performance Test Code on Compressors and Exhausters. §5.4 isentropic efficiency, §5.4a polytropic efficiency.</p>
+    <p><strong>ISO 10816-3</strong> — Vibration evaluation of machines. Group 1: large machines &gt; 300 kW on rigid foundations. Zone boundaries: B/C = 4.5 mm/s (advisory), C/D = 7.1 mm/s (alarm), D = 11.0 mm/s (trip).</p>
+    <p><strong>API 617</strong> — Axial and Centrifugal Compressors. Referenced for polytropic efficiency as primary metric.</p>
+    <h3>3. Input Tags (29 variables)</h3>
+    <p>Motor currents (A/B), suction/discharge pressures (A/B), controller setpoints, bypass positions, filter dP, vibration (8 points: A1-4, B1-4), bearing temps (4 points: A1-2, B1-2), total flow, discharge temps, suction temp.</p>
+    <h3>4. Calculations</h3>
+    <p><code>P_elec = sqrt(3) * V * I * PF / 1000</code> [kW]</p>
+    <p><code>n_isentropic = T1 * [(P2/P1)^((k-1)/k) - 1] / (T2 - T1)</code></p>
+    <p><code>sigma = ln(T2/T1) / ln(P2/P1); n_polytropic = ((k-1)/k) / sigma</code></p>
+    <h3>5. Alert Thresholds</h3>
+    <p>Vibration: advisory 4.5, alarm 7.1, trip 11.0 mm/s. Bearing T: advisory 70, alarm 85, trip 95 C. Blower dP: advisory 0.45 bar. Filter dP: advisory 0.10 bar. Bypass: advisory 60%.</p>
+    <h3>6. Assumptions</h3>
+    <p>Perfect gas with constant k=1.40. Motor efficiency assumed 100% (shaft power = electrical power). Suction temp forward-filled up to 4 hours if missing, then fallback to 4.0 C.</p>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// TAG ALIASES — mirrors engine.TAG_ALIASES
+// ═══════════════════════════════════════════════════════
+const TAG_ALIASES={timestamp:["timestamp","Timestamp","Date","date","Time"],motor_current_a:["motor_current_a","Motor Current A"],motor_current_b:["motor_current_b","Motor Current B"],suction_pressure_a:["suction_pressure_a","Suction Press A"],suction_pressure_b:["suction_pressure_b","Suction Press B"],discharge_pressure_a:["discharge_pressure_a","Discharge Press A"],discharge_pressure_b:["discharge_pressure_b","Discharge Press B"],controller_sp_a:["controller_sp_a","Controller SP A"],controller_sp_b:["controller_sp_b","Controller SP B"],bypass_op_a:["bypass_op_a","Bypass OP A"],bypass_op_b:["bypass_op_b","Bypass OP B"],filter_dp_a:["filter_dp_a","Filter DP A"],filter_dp_b:["filter_dp_b","Filter DP B"],total_flow:["total_flow","Total Flow"],suction_temp:["suction_temp","Suction Temp"],discharge_temp_a:["discharge_temp_a","Discharge Temp A"],discharge_temp_b:["discharge_temp_b","Discharge Temp B"],vibration_a_1:["vibration_a_1","Vibration A1"],vibration_a_2:["vibration_a_2","Vibration A2"],vibration_a_3:["vibration_a_3","Vibration A3"],vibration_a_4:["vibration_a_4","Vibration A4"],vibration_b_1:["vibration_b_1","Vibration B1"],vibration_b_2:["vibration_b_2","Vibration B2"],vibration_b_3:["vibration_b_3","Vibration B3"],vibration_b_4:["vibration_b_4","Vibration B4"],bearing_temp_a_1:["bearing_temp_a_1","Bearing Temp A1"],bearing_temp_a_2:["bearing_temp_a_2","Bearing Temp A2"],bearing_temp_b_1:["bearing_temp_b_1","Bearing Temp B1"],bearing_temp_b_2:["bearing_temp_b_2","Bearing Temp B2"]};
+
+function lookup(row,canonical){const aliases=TAG_ALIASES[canonical]||[canonical];for(const a of aliases){if(row[a]!==undefined&&row[a]!==null&&String(row[a]).trim()!=="")return row[a];}return null;}
+function num(v){if(v===null||v===undefined||v==="")return NaN;if(typeof v==="number")return v;const n=parseFloat(String(v).replace(/,/g,"").trim());return isNaN(n)?NaN:n;}
+function parseTs(v){if(!v)return null;const s=String(v).trim();const m=s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?$/);if(m)return new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+(m[6]||0));const m2=s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{2,4})\s+(\d{1,2}):(\d{2})$/);if(m2){let y=+m2[3];if(y<100)y+=2000;return new Date(y,+m2[1]-1,+m2[2],+m2[4],+m2[5]);}const d=new Date(s);return isNaN(d.getTime())?null:d;}
+
+// ═══════════════════════════════════════════════════════
+// CORE MATH — mirrors engine.py §4
+// ═══════════════════════════════════════════════════════
+function shaftPowerKw(V,I,PF){return Math.sqrt(3)*V*I*PF/1000;}
+function normalizePressures(p1kpaa,p2kpag,patm){return[p1kpaa/100,p2kpag/100+patm];}
+function fluidPowerKw(Q,dP){return Q*dP/36;}
+function isentropicEff(T1,T2,P1,P2,k){if(!(P2>P1&&T2>T1))return NaN;const exp=(k-1)/k;return T1*(Math.pow(P2/P1,exp)-1)/(T2-T1);}
+function polytropicEff(T1,T2,P1,P2,k){if(!(P2>P1&&T2>T1))return NaN;const sigma=Math.log(T2/T1)/Math.log(P2/P1);if(sigma<=0)return NaN;return((k-1)/k)/sigma;}
+function detectActiveBlower(ca,cb,mode,min){if(mode==="A")return(!isNaN(ca)&&ca>min)?"A":null;if(mode==="B")return(!isNaN(cb)&&cb>min)?"B":null;const aOn=!isNaN(ca)&&ca>min,bOn=!isNaN(cb)&&cb>min;if(aOn&&bOn)return ca>=cb?"A":"B";if(aOn)return"A";if(bOn)return"B";return null;}
+function buildAlerts(vmax,bmax,fdp,dp,byp,p2,sp,lim){const a=[];const ISO="ISO 10816-3, Group 1";if(!isNaN(vmax)){if(vmax>=lim.vib_trip)a.push({severity:"trip",message:`Vibration ${vmax.toFixed(2)} mm/s exceeds trip ${lim.vib_trip} mm/s (Zone D).`,source:ISO});else if(vmax>=lim.vib_alarm)a.push({severity:"alarm",message:`Vibration ${vmax.toFixed(2)} mm/s exceeds alarm ${lim.vib_alarm} mm/s (Zone C/D).`,source:ISO});else if(vmax>=lim.vib_adv)a.push({severity:"advisory",message:`Vibration ${vmax.toFixed(2)} mm/s above advisory ${lim.vib_adv} mm/s (Zone B/C).`,source:ISO});}if(!isNaN(bmax)){if(bmax>=lim.brg_trip)a.push({severity:"trip",message:`Bearing T ${bmax.toFixed(1)} C exceeds trip ${lim.brg_trip} C.`,source:"bearing datasheet"});else if(bmax>=lim.brg_alarm)a.push({severity:"alarm",message:`Bearing T ${bmax.toFixed(1)} C exceeds alarm ${lim.brg_alarm} C.`,source:"bearing datasheet"});else if(bmax>=lim.brg_adv)a.push({severity:"advisory",message:`Bearing T ${bmax.toFixed(1)} C above advisory ${lim.brg_adv} C.`,source:"bearing datasheet"});}if(!isNaN(fdp)&&fdp>lim.filter_dp)a.push({severity:"advisory",message:`Filter dP ${fdp.toFixed(3)} bar above ${lim.filter_dp} bar.`,source:"plant setpoint"});if(!isNaN(dp)&&dp>lim.blower_dp)a.push({severity:"advisory",message:`Blower dP ${dp.toFixed(3)} bar above design ${lim.blower_dp} bar.`,source:"plant setpoint"});if(!isNaN(byp)&&byp>lim.bypass_max)a.push({severity:"advisory",message:`Bypass ${byp.toFixed(1)}% above ${lim.bypass_max}%.`,source:"plant setpoint"});if(!isNaN(byp)&&byp<5&&!isNaN(p2)&&!isNaN(sp)&&p2<sp)a.push({severity:"advisory",message:"Bypass closed & discharge below setpoint — at capacity.",source:"control narrative"});return a;}
+function rollUp(alerts){if(alerts.some(x=>x.severity==="trip"))return"trip";if(alerts.some(x=>x.severity==="alarm"))return"alarm";if(alerts.some(x=>x.severity==="advisory"))return"advisory";return"ok";}
+
+// ═══════════════════════════════════════════════════════
+// ROW & BATCH PROCESSOR
+// ═══════════════════════════════════════════════════════
+function processRow(row,s,lim,t1FF){const ts=parseTs(lookup(row,"timestamp"));if(!ts)return{drop:true,reason:"bad timestamp"};const ca=num(lookup(row,"motor_current_a")),cb=num(lookup(row,"motor_current_b"));const active=detectActiveBlower(ca,cb,s.mode,s.iMin);if(!active)return{drop:true,reason:"no active blower"};const a=active.toLowerCase(),I=active==="A"?ca:cb;const p1=num(lookup(row,`suction_pressure_${a}`));const p2=num(lookup(row,`discharge_pressure_${a}`));const sp=num(lookup(row,`controller_sp_${a}`));const byp=num(lookup(row,`bypass_op_${a}`));const fdp=num(lookup(row,`filter_dp_${a}`));const t2c=num(lookup(row,`discharge_temp_${a}`));const flow=num(lookup(row,"total_flow"));if(isNaN(p1)||isNaN(p2)||isNaN(flow)||isNaN(I))return{drop:true,reason:"missing critical tag"};let t1c=num(lookup(row,"suction_temp")),t1src="measured";if(isNaN(t1c)){if(t1FF!==null&&t1FF!==undefined){t1c=t1FF;t1src="forward-filled";}else{t1c=s.t1fb;t1src="default";}}const vibs=[1,2,3,4].map(i=>num(lookup(row,`vibration_${a}_${i}`))).filter(x=>!isNaN(x));const brgs=[1,2].map(i=>num(lookup(row,`bearing_temp_${a}_${i}`))).filter(x=>!isNaN(x));const vmax=vibs.length?Math.max(...vibs):NaN;const bmax=brgs.length?Math.max(...brgs):NaN;const Pelec=shaftPowerKw(s.V,I,s.PF);const[P1,P2]=normalizePressures(p1,p2,s.Patm);const dP=P2-P1,pr=P1>0?P2/P1:NaN;const Pfluid=fluidPowerKw(flow,dP);const effFluid=Pelec>0?(Pfluid/Pelec*100):NaN;const T1=t1c+273.15,T2=t2c+273.15;const effIsen=isNaN(t2c)?NaN:isentropicEff(T1,T2,P1,P2,s.k)*100;const effPoly=isNaN(t2c)?NaN:polytropicEff(T1,T2,P1,P2,s.k)*100;const eff={polytropic:effPoly,isentropic:effIsen,fluid:effFluid}[s.effMethod];const alerts=buildAlerts(vmax,bmax,fdp,dP,byp,p2,sp,lim);const status=rollUp(alerts);return{drop:false,timestamp:ts,active,power:Pelec,pr,dp:dP,p1:P1,p2:P2,flow,eff_fluid:effFluid,eff_isen:effIsen,eff_poly:effPoly,eff_headline:eff,eff_method:s.effMethod,vmax,bmax,fdp,byp,t1c,t1src,alerts,status};}
+function processBatch(rows,s,lim){const parsed=[];for(const r of rows){const ts=parseTs(lookup(r,"timestamp"));if(ts)parsed.push([ts,r]);}parsed.sort((a,b)=>a[0]-b[0]);let lastT1=null,lastT1Ts=null;const out=[];let dropped=0;const reasons={};for(const[ts,r]of parsed){const live=num(lookup(r,"suction_temp"));let ff=null;if(isNaN(live)&&lastT1!==null){const ageH=(ts-lastT1Ts)/3600000;if(ageH<=s.ffH)ff=lastT1;}const res=processRow(r,s,lim,ff);if(res.drop){dropped++;reasons[res.reason]=(reasons[res.reason]||0)+1;}else{out.push(res);if(res.t1src==="measured"){lastT1=res.t1c;lastT1Ts=ts;}}}return{processed:out,dropped,reasons};}
+
+// ═══════════════════════════════════════════════════════
+// UI
+// ═══════════════════════════════════════════════════════
+let currentRows=[];let currentBatch=null;const charts={};
+function readSettings(){return{V:+document.getElementById("setV").value,PF:+document.getElementById("setPF").value,Patm:+document.getElementById("setPatm").value,k:+document.getElementById("setK").value,iMin:+document.getElementById("setIMin").value,t1fb:+document.getElementById("setT1FB").value,mode:document.getElementById("setMode").value,effMethod:document.getElementById("setEffMethod").value,ffH:4};}
+function readLimits(){return{vib_adv:+document.getElementById("limVA").value,vib_alarm:+document.getElementById("limVAL").value,vib_trip:+document.getElementById("limVT").value,brg_adv:+document.getElementById("limBA").value,brg_alarm:+document.getElementById("limBAL").value,brg_trip:+document.getElementById("limBT").value,blower_dp:+document.getElementById("limDP").value,filter_dp:+document.getElementById("limFilter").value,bypass_max:+document.getElementById("limBypass").value};}
+function fmt(v,d){return(v===null||v===undefined||isNaN(v))?"—":(+v).toFixed(d);}
+
+function renderResult(res,lim){document.getElementById("statusArea").style.display="none";document.getElementById("kpiArea").style.display="block";document.getElementById("kpiEffMethod").textContent=res.eff_method;document.getElementById("kpiEffHeadline").textContent=fmt(res.eff_headline,2)+" %";document.getElementById("kpiEffPoly").textContent=fmt(res.eff_poly,2)+" %";document.getElementById("kpiEffIsen").textContent=fmt(res.eff_isen,2)+" %";document.getElementById("kpiEffFluid").textContent=fmt(res.eff_fluid,2)+" %";document.getElementById("kpiActive").textContent="Blower "+res.active;document.getElementById("kpiPower").textContent=fmt(res.power,1)+" kW";document.getElementById("kpiPR").textContent=fmt(res.pr,4);document.getElementById("kpiDP").textContent=fmt(res.dp,3)+" bar";document.getElementById("kpiDPlim").textContent="design <= "+lim.blower_dp+" bar";document.getElementById("kpiFlow").textContent=fmt(res.flow,0);document.getElementById("kpiVib").textContent=fmt(res.vmax,2)+" mm/s";document.getElementById("kpiVibLim").textContent=`adv ${lim.vib_adv} · alm ${lim.vib_alarm} · trip ${lim.vib_trip}`;document.getElementById("kpiBrg").textContent=fmt(res.bmax,1)+" C";document.getElementById("kpiBrgLim").textContent=`adv ${lim.brg_adv} · alm ${lim.brg_alarm} · trip ${lim.brg_trip}`;document.getElementById("kpiT1").textContent=fmt(res.t1c,1)+" C";document.getElementById("kpiT1Src").textContent=res.t1src;const banner=document.getElementById("statusBanner");banner.className="banner status-"+res.status;document.getElementById("statusText").textContent=res.status.toUpperCase();document.getElementById("statusDetail").textContent=res.alerts.length?`${res.alerts.length} active alert(s)`:"No active alerts.";document.getElementById("alertList").innerHTML=res.alerts.map(al=>`<div class="alert-item severity-${al.severity}"><strong>[${al.severity.toUpperCase()}]</strong> ${al.message}<span class="src">Source: ${al.source}</span></div>`).join("");}
+
+function mkChart(id,labels,datasets,dualY){if(charts[id]){charts[id].destroy();}const ctx=document.getElementById("chart-"+id).getContext("2d");const opts={responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{position:"bottom",labels:{font:{size:11,family:"IBM Plex Sans"},boxWidth:12}}},scales:{x:{ticks:{maxTicksLimit:6,font:{size:10,family:"IBM Plex Sans"}}},y:{ticks:{font:{size:10,family:"IBM Plex Mono"}}}},elements:{point:{radius:0},line:{borderWidth:1.5,tension:0.1}}};if(dualY)opts.scales.y1={position:"right",grid:{drawOnChartArea:false},ticks:{font:{size:10,family:"IBM Plex Mono"}}};charts[id]=new Chart(ctx,{type:"line",data:{labels,datasets},options:opts});}
+
+function renderBatch(batch){const sumEl=document.getElementById("batchSummary");const tbody=document.getElementById("resultTable").querySelector("tbody");if(!batch||!batch.processed.length){sumEl.innerHTML='<div class="stat">No rows processed.</div>';tbody.innerHTML='<tr><td colspan="12" style="text-align:center;color:var(--text-secondary)">No rows.</td></tr>';return;}const reasons=Object.entries(batch.reasons).map(([k,v])=>`${k}: ${v}`).join("; ")||"none";const sc=batch.processed.reduce((acc,r)=>{acc[r.status]=(acc[r.status]||0)+1;return acc;},{});sumEl.innerHTML=`<div class="stat">Processed: <strong>${batch.processed.length}</strong></div><div class="stat">Dropped: <strong>${batch.dropped}</strong></div><div class="stat">Drop reasons: ${reasons}</div><div class="stat">OK: <strong>${sc.ok||0}</strong></div><div class="stat">Advisory: <strong>${sc.advisory||0}</strong></div><div class="stat">Alarm: <strong>${sc.alarm||0}</strong></div><div class="stat">Trip: <strong>${sc.trip||0}</strong></div>`;const rows=batch.processed.slice(-50).reverse();tbody.innerHTML=rows.map(r=>{const ts=r.timestamp;const tsStr=`${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,"0")}-${String(ts.getDate()).padStart(2,"0")} ${String(ts.getHours()).padStart(2,"0")}:${String(ts.getMinutes()).padStart(2,"0")}`;return`<tr><td>${tsStr}</td><td>${r.active}</td><td class="num">${fmt(r.power,1)}</td><td class="num">${fmt(r.pr,3)}</td><td class="num">${fmt(r.dp,3)}</td><td class="num">${fmt(r.flow,0)}</td><td class="num">${fmt(r.eff_poly,2)}</td><td class="num">${fmt(r.eff_isen,2)}</td><td class="num">${fmt(r.eff_fluid,2)}</td><td class="num">${fmt(r.vmax,2)}</td><td class="num">${fmt(r.bmax,1)}</td><td><span class="status-pill ${r.status}">${r.status}</span></td></tr>`;}).join("");if(batch.processed.length<2)return;const stride=Math.max(1,Math.floor(batch.processed.length/200));const sample=batch.processed.filter((_,i)=>i%stride===0);const labels=sample.map(r=>{const d=r.timestamp;return`${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;});mkChart("eff",labels,[{label:"n polytropic",data:sample.map(r=>isNaN(r.eff_poly)?null:r.eff_poly),borderColor:"#BB6E3D",backgroundColor:"transparent"},{label:"n isentropic",data:sample.map(r=>isNaN(r.eff_isen)?null:r.eff_isen),borderColor:"#3A7D52",backgroundColor:"transparent"},{label:"n fluid",data:sample.map(r=>isNaN(r.eff_fluid)?null:r.eff_fluid),borderColor:"#C4890E",backgroundColor:"transparent"}],false);mkChart("power",labels,[{label:"Power (kW)",data:sample.map(r=>r.power),borderColor:"#BB6E3D",backgroundColor:"transparent",yAxisID:"y"},{label:"Flow (Nm3/hr)",data:sample.map(r=>r.flow),borderColor:"#463B33",backgroundColor:"transparent",yAxisID:"y1"}],true);mkChart("vib",labels,[{label:"Max vib (mm/s)",data:sample.map(r=>r.vmax),borderColor:"#D4432A",backgroundColor:"transparent"}],false);mkChart("brg",labels,[{label:"Max bearing T (C)",data:sample.map(r=>r.bmax),borderColor:"#C4890E",backgroundColor:"transparent",yAxisID:"y"},{label:"dP (bar)",data:sample.map(r=>r.dp),borderColor:"#615E5C",backgroundColor:"transparent",yAxisID:"y1"}],true);}
+
+function runProcess(){if(!currentRows.length)return;const s=readSettings(),l=readLimits();currentBatch=processBatch(currentRows,s,l);if(currentBatch.processed.length){renderResult(currentBatch.processed[currentBatch.processed.length-1],l);}else{document.getElementById("statusArea").style.display="block";document.getElementById("kpiArea").style.display="none";document.getElementById("statusArea").innerHTML='<div class="empty-state"><h3>All rows dropped</h3><p>Check Data & Log tab for drop reasons.</p></div>';}renderBatch(currentBatch);}
+
+// Demo data (28 rows, Dec 2021 - Jan 2022)
+const DEMO_SERIES=[{"Date":"12-22-21 4:00","Motor Current A":"0.00","Motor Current B":"114.42","Suction Press A":"0.00","Suction Press B":"120.18","Discharge Press A":"91.99","Discharge Press B":"92.01","Controller SP A":"84.00","Controller SP B":"92.00","Bypass OP A":"30.00","Bypass OP B":"49.16","Filter DP A":"0.00","Filter DP B":"0.00","Vibration A1":"0.06","Vibration A2":"0.04","Vibration A3":"0.77","Vibration A4":"0.77","Bearing Temp A1":"54.39","Bearing Temp A2":"68.29","Vibration B1":"0.06","Vibration B2":"0.04","Vibration B3":"0.77","Vibration B4":"0.77","Bearing Temp B1":"54.39","Bearing Temp B2":"68.29","Total Flow":"20049.42","Discharge Temp A":"-6.00","Discharge Temp B":"74.00","Suction Temp":""},{"Date":"12-23-21 8:00","Motor Current A":"0.00","Motor Current B":"113.03","Suction Press A":"1.07","Suction Press B":"133.15","Discharge Press A":"91.97","Discharge Press B":"92.00","Controller SP A":"84.00","Controller SP B":"92.00","Bypass OP A":"30.00","Bypass OP B":"46.64","Filter DP A":"1.07","Filter DP B":"1.07","Vibration A1":"0.06","Vibration A2":"0.04","Vibration A3":"0.67","Vibration A4":"0.71","Bearing Temp A1":"44.27","Bearing Temp A2":"56.46","Vibration B1":"0.06","Vibration B2":"0.04","Vibration B3":"0.67","Vibration B4":"0.71","Bearing Temp B1":"44.27","Bearing Temp B2":"56.46","Total Flow":"19690.42","Discharge Temp A":"-11.10","Discharge Temp B":"68.90","Suction Temp":""},{"Date":"12-24-21 12:00","Motor Current A":"0.00","Motor Current B":"113.33","Suction Press A":"0.06","Suction Press B":"113.01","Discharge Press A":"91.94","Discharge Press B":"92.01","Controller SP A":"84.00","Controller SP B":"92.00","Bypass OP A":"30.00","Bypass OP B":"41.27","Filter DP A":"0.06","Filter DP B":"0.06","Vibration A1":"0.05","Vibration A2":"0.04","Vibration A3":"0.70","Vibration A4":"0.67","Bearing Temp A1":"34.34","Bearing Temp A2":"44.38","Vibration B1":"0.05","Vibration B2":"0.04","Vibration B3":"0.70","Vibration B4":"0.67","Bearing Temp B1":"34.34","Bearing Temp B2":"44.38","Total Flow":"19547.99","Discharge Temp A":"-18.00","Discharge Temp B":"62.00","Suction Temp":""},{"Date":"12-25-21 16:00","Motor Current A":"0.00","Motor Current B":"113.75","Suction Press A":"0.00","Suction Press B":"115.12","Discharge Press A":"91.91","Discharge Press B":"91.99","Controller SP A":"84.00","Controller SP B":"92.00","Bypass OP A":"30.00","Bypass OP B":"38.00","Filter DP A":"0.00","Filter DP B":"0.00","Vibration A1":"0.05","Vibration A2":"0.04","Vibration A3":"0.70","Vibration A4":"0.71","Bearing Temp A1":"35.80","Bearing Temp A2":"48.79","Vibration B1":"0.05","Vibration B2":"0.04","Vibration B3":"0.70","Vibration B4":"0.71","Bearing Temp B1":"35.80","Bearing Temp B2":"48.79","Total Flow":"19245.12","Discharge Temp A":"-25.93","Discharge Temp B":"54.07","Suction Temp":""},{"Date":"12-26-21 20:00","Motor Current A":"0.00","Motor Current B":"112.64","Suction Press A":"0.00","Suction Press B":"111.89","Discharge Press A":"91.91","Discharge Press B":"92.00","Controller SP A":"84.00","Controller SP B":"92.00","Bypass OP A":"30.00","Bypass OP B":"37.49","Filter DP A":"0.00","Filter DP B":"0.00","Vibration A1":"0.06","Vibration A2":"0.04","Vibration A3":"0.67","Vibration A4":"0.71","Bearing Temp A1":"34.89","Bearing Temp A2":"48.22","Vibration B1":"0.06","Vibration B2":"0.04","Vibration B3":"0.67","Vibration B4":"0.71","Bearing Temp B1":"34.89","Bearing Temp B2":"48.22","Total Flow":"19159.32","Discharge Temp A":"-26.52","Discharge Temp B":"53.48","Suction Temp":""},{"Date":"12-28-21 0:00","Motor Current A":"0.00","Motor Current B":"116.87","Suction Press A":"0.00","Suction Press B":"115.91","Discharge Press A":"91.95","Discharge Press B":"92.02","Controller SP A":"84.00","Controller SP B":"92.00","Bypass OP A":"30.00","Bypass OP B":"37.46","Filter DP A":"0.00","Filter DP B":"0.00","Vibration A1":"0.04","Vibration A2":"0.04","Vibration A3":"0.67","Vibration A4":"0.75","Bearing Temp A1":"29.40","Bearing Temp A2":"37.75","Vibration B1":"0.04","Vibration B2":"0.04","Vibration B3":"0.67","Vibration B4":"0.75","Bearing Temp B1":"29.40","Bearing Temp B2":"37.75","Total Flow":"16648.99","Discharge Temp A":"-34.00","Discharge Temp B":"46.00","Suction Temp":""},{"Date":"12-29-21 4:00","Motor Current A":"0.00","Motor Current B":"114.43","Suction Press A":"0.00","Suction Press B":"115.07","Discharge Press A":"91.93","Discharge Press B":"92.02","Controller SP A":"84.00","Controller SP B":"92.00","Bypass OP A":"30.00","Bypass OP B":"38.45","Filter DP A":"0.00","Filter DP B":"0.00","Vibration A1":"0.05","Vibration A2":"0.04","Vibration A3":"0.70","Vibration A4":"0.72","Bearing Temp A1":"35.55","Bearing Temp A2":"46.45","Vibration B1":"0.05","Vibration B2":"0.04","Vibration B3":"0.70","Vibration B4":"0.72","Bearing Temp B1":"35.55","Bearing Temp B2":"46.45","Total Flow":"19652.75","Discharge Temp A":"-26.91","Discharge Temp B":"53.09","Suction Temp":""},{"Date":"12-30-21 12:00","Motor Current A":"0.00","Motor Current B":"114.46","Suction Press A":"0.00","Suction Press B":"115.28","Discharge Press A":"91.93","Discharge Press B":"92.02","Controller SP A":"84.00","Controller SP B":"92.00","Bypass OP A":"30.00","Bypass OP B":"38.58","Filter DP A":"0.00","Filter DP B":"0.00","Vibration A1":"0.05","Vibration A2":"0.04","Vibration A3":"0.68","Vibration A4":"0.70","Bearing Temp A1":"33.83","Bearing Temp A2":"46.06","Vibration B1":"0.05","Vibration B2":"0.04","Vibration B3":"0.68","Vibration B4":"0.70","Bearing Temp B1":"33.83","Bearing Temp B2":"46.06","Total Flow":"19623.33","Discharge Temp A":"-29.39","Discharge Temp B":"50.61","Suction Temp":""},{"Date":"12-31-21 16:00","Motor Current A":"0.00","Motor Current B":"114.05","Suction Press A":"0.00","Suction Press B":"113.45","Discharge Press A":"91.91","Discharge Press B":"92.00","Controller SP A":"84.00","Controller SP B":"92.00","Bypass OP A":"30.00","Bypass OP B":"37.82","Filter DP A":"0.00","Filter DP B":"0.00","Vibration A1":"0.05","Vibration A2":"0.04","Vibration A3":"0.70","Vibration A4":"0.73","Bearing Temp A1":"35.42","Bearing Temp A2":"45.59","Vibration B1":"0.05","Vibration B2":"0.04","Vibration B3":"0.70","Vibration B4":"0.73","Bearing Temp B1":"35.42","Bearing Temp B2":"45.59","Total Flow":"19419.03","Discharge Temp A":"-27.20","Discharge Temp B":"52.80","Suction Temp":""},{"Date":"1-1-22 20:00","Motor Current A":"0.00","Motor Current B":"114.02","Suction Press A":"0.00","Suction Press B":"124.61","Discharge Press A":"91.92","Discharge Press B":"91.98","Controller SP A":"84.00","Controller SP B":"92.00","Bypass OP A":"30.00","Bypass OP B":"47.43","Filter DP A":"0.00","Filter DP B":"0.00","Vibration A1":"0.05","Vibration A2":"0.04","Vibration A3":"0.73","Vibration A4":"0.72","Bearing Temp A1":"48.11","Bearing Temp A2":"62.83","Vibration B1":"0.05","Vibration B2":"0.04","Vibration B3":"0.73","Vibration B4":"0.72","Bearing Temp B1":"48.11","Bearing Temp B2":"62.83","Total Flow":"19986.09","Discharge Temp A":"-18.07","Discharge Temp B":"61.93","Suction Temp":""},{"Date":"1-3-22 0:00","Motor Current A":"0.00","Motor Current B":"113.51","Suction Press A":"0.00","Suction Press B":"101.15","Discharge Press A":"91.93","Discharge Press B":"92.00","Controller SP A":"84.00","Controller SP B":"92.00","Bypass OP A":"30.00","Bypass OP B":"39.01","Filter DP A":"0.00","Filter DP B":"0.00","Vibration A1":"0.05","Vibration A2":"0.04","Vibration A3":"0.68","Vibration A4":"0.70","Bearing Temp A1":"35.76","Bearing Temp A2":"44.86","Vibration B1":"0.05","Vibration B2":"0.04","Vibration B3":"0.68","Vibration B4":"0.70","Bearing Temp B1":"35.76","Bearing Temp B2":"44.86","Total Flow":"18916.84","Discharge Temp A":"-22.07","Discharge Temp B":"57.93","Suction Temp":""},{"Date":"1-4-22 4:00","Motor Current A":"0.00","Motor Current B":"113.86","Suction Press A":"8.94","Suction Press B":"138.86","Discharge Press A":"91.92","Discharge Press B":"92.01","Controller SP A":"84.00","Controller SP B":"92.00","Bypass OP A":"30.00","Bypass OP B":"37.54","Filter DP A":"8.94","Filter DP B":"8.94","Vibration A1":"0.05","Vibration A2":"0.04","Vibration A3":"0.78","Vibration A4":"0.72","Bearing Temp A1":"23.24","Bearing Temp A2":"33.20","Vibration B1":"0.05","Vibration B2":"0.04","Vibration B3":"0.78","Vibration B4":"0.72","Bearing Temp B1":"23.24","Bearing Temp B2":"33.20","Total Flow":"17948.83","Discharge Temp A":"-24.74","Discharge Temp B":"55.26","Suction Temp":""},{"Date":"1-5-22 8:00","Motor Current A":"0.00","Motor Current B":"115.27","Suction Press A":"0.00","Suction Press B":"112.23","Discharge Press A":"91.92","Discharge Press B":"92.02","Controller SP A":"84.00","Controller SP B":"92.00","Bypass OP A":"30.00","Bypass OP B":"35.56","Filter DP A":"0.00","Filter DP B":"0.00","Vibration A1":"0.05","Vibration A2":"0.04","Vibration A3":"0.70","Vibration A4":"0.70","Bearing Temp A1":"30.47","Bearing Temp A2":"42.94","Vibration B1":"0.05","Vibration B2":"0.04","Vibration B3":"0.70","Vibration B4":"0.70","Bearing Temp B1":"30.47","Bearing Temp B2":"42.94","Total Flow":"17876.13","Discharge Temp A":"-29.09","Discharge Temp B":"50.91","Suction Temp":""},{"Date":"1-6-22 12:00","Motor Current A":"0.00","Motor Current B":"113.76","Suction Press A":"0.00","Suction Press B":"99.67","Discharge Press A":"91.94","Discharge Press B":"92.01","Controller SP A":"84.00","Controller SP B":"92.00","Bypass OP A":"30.00","Bypass OP B":"38.24","Filter DP A":"0.00","Filter DP B":"0.00","Vibration A1":"0.05","Vibration A2":"0.04","Vibration A3":"0.73","Vibration A4":"0.72","Bearing Temp A1":"37.71","Bearing Temp A2":"56.38","Vibration B1":"0.05","Vibration B2":"0.04","Vibration B3":"0.73","Vibration B4":"0.72","Bearing Temp B1":"37.71","Bearing Temp B2":"56.38","Total Flow":"18523.24","Discharge Temp A":"-25.40","Discharge Temp B":"54.60","Suction Temp":""},{"Date":"1-7-22 20:00","Motor Current A":"0.00","Motor Current B":"111.90","Suction Press A":"1.13","Suction Press B":"120.23","Discharge Press A":"91.94","Discharge Press B":"92.01","Controller SP A":"84.00","Controller SP B":"92.00","Bypass OP A":"30.00","Bypass OP B":"39.48","Filter DP A":"1.13","Filter DP B":"1.13","Vibration A1":"0.05","Vibration A2":"0.04","Vibration A3":"0.72","Vibration A4":"0.66","Bearing Temp A1":"30.02","Bearing Temp A2":"41.32","Vibration B1":"0.05","Vibration B2":"0.04","Vibration B3":"0.72","Vibration B4":"0.66","Bearing Temp B1":"30.02","Bearing Temp B2":"41.32","Total Flow":"19007.00","Discharge Temp A":"-25.37","Discharge Temp B":"54.63","Suction Temp":""},{"Date":"1-9-22 0:00","Motor Current A":"0.00","Motor Current B":"114.16","Suction Press A":"0.00","Suction Press B":"98.76","Discharge Press A":"91.92","Discharge Press B":"91.99","Controller SP A":"84.00","Controller SP B":"92.00","Bypass OP A":"30.00","Bypass OP B":"38.04","Filter DP A":"0.00","Filter DP B":"0.00","Vibration A1":"0.04","Vibration A2":"0.04","Vibration A3":"0.72","Vibration A4":"0.72","Bearing Temp A1":"40.00","Bearing Temp A2":"58.00","Vibration B1":"0.04","Vibration B2":"0.04","Vibration B3":"0.72","Vibration B4":"0.72","Bearing Temp B1":"40.00","Bearing Temp B2":"58.00","Total Flow":"14429.52","Discharge Temp A":"-24.00","Discharge Temp B":"56.00","Suction Temp":""},{"Date":"1-10-22 4:00","Motor Current A":"0.00","Motor Current B":"113.06","Suction Press A":"0.00","Suction Press B":"116.61","Discharge Press A":"91.98","Discharge Press B":"92.00","Controller SP A":"84.00","Controller SP B":"92.00","Bypass OP A":"30.00","Bypass OP B":"41.96","Filter DP A":"0.00","Filter DP B":"0.00","Vibration A1":"0.05","Vibration A2":"0.04","Vibration A3":"0.75","Vibration A4":"0.72","Bearing Temp A1":"46.96","Bearing Temp A2":"66.56","Vibration B1":"0.05","Vibration B2":"0.04","Vibration B3":"0.75","Vibration B4":"0.72","Bearing Temp B1":"46.96","Bearing Temp B2":"66.56","Total Flow":"19422.96","Discharge Temp A":"-17.00","Discharge Temp B":"63.00","Suction Temp":""},{"Date":"1-11-22 8:00","Motor Current A":"0.00","Motor Current B":"108.80","Suction Press A":"0.00","Suction Press B":"119.76","Discharge Press A":"91.91","Discharge Press B":"91.98","Controller SP A":"84.00","Controller SP B":"92.00","Bypass OP A":"30.00","Bypass OP B":"54.80","Filter DP A":"0.00","Filter DP B":"0.00","Vibration A1":"0.05","Vibration A2":"0.04","Vibration A3":"0.72","Vibration A4":"0.71","Bearing Temp A1":"60.43","Bearing Temp A2":"75.74","Vibration B1":"0.05","Vibration B2":"0.04","Vibration B3":"0.72","Vibration B4":"0.71","Bearing Temp B1":"60.43","Bearing Temp B2":"75.74","Total Flow":"14919.47","Discharge Temp A":"-0.89","Discharge Temp B":"79.11","Suction Temp":""},{"Date":"1-12-22 12:00","Motor Current A":"0.00","Motor Current B":"109.11","Suction Press A":"0.00","Suction Press B":"120.98","Discharge Press A":"91.97","Discharge Press B":"92.00","Controller SP A":"84.00","Controller SP B":"92.00","Bypass OP A":"30.00","Bypass OP B":"53.88","Filter DP A":"0.00","Filter DP B":"0.00","Vibration A1":"0.06","Vibration A2":"0.04","Vibration A3":"0.74","Vibration A4":"0.75","Bearing Temp A1":"62.32","Bearing Temp A2":"77.75","Vibration B1":"0.06","Vibration B2":"0.04","Vibration B3":"0.74","Vibration B4":"0.75","Bearing Temp B1":"62.32","Bearing Temp B2":"77.75","Total Flow":"14433.89","Discharge Temp A":"3.13","Discharge Temp B":"83.13","Suction Temp":""},{"Date":"1-13-22 16:00","Motor Current A":"0.00","Motor Current B":"110.00","Suction Press A":"0.00","Suction Press B":"121.17","Discharge Press A":"92.69","Discharge Press B":"92.00","Controller SP A":"84.00","Controller SP B":"92.00","Bypass OP A":"30.00","Bypass OP B":"52.11","Filter DP A":"0.00","Filter DP B":"0.00","Vibration A1":"0.06","Vibration A2":"0.04","Vibration A3":"0.73","Vibration A4":"0.71","Bearing Temp A1":"60.96","Bearing Temp A2":"75.08","Vibration B1":"0.06","Vibration B2":"0.04","Vibration B3":"0.73","Vibration B4":"0.71","Bearing Temp B1":"60.96","Bearing Temp B2":"75.08","Total Flow":"14793.70","Discharge Temp A":"1.99","Discharge Temp B":"81.99","Suction Temp":""},{"Date":"1-14-22 20:00","Motor Current A":"0.00","Motor Current B":"109.89","Suction Press A":"0.00","Suction Press B":"117.99","Discharge Press A":"91.96","Discharge Press B":"91.98","Controller SP A":"84.00","Controller SP B":"92.00","Bypass OP A":"30.00","Bypass OP B":"47.50","Filter DP A":"0.00","Filter DP B":"0.00","Vibration A1":"0.06","Vibration A2":"0.05","Vibration A3":"0.74","Vibration A4":"0.70","Bearing Temp A1":"60.21","Bearing Temp A2":"74.07","Vibration B1":"0.06","Vibration B2":"0.05","Vibration B3":"0.74","Vibration B4":"0.70","Bearing Temp B1":"60.21","Bearing Temp B2":"74.07","Total Flow":"10242.54","Discharge Temp A":"-0.91","Discharge Temp B":"79.09","Suction Temp":""},{"Date":"1-16-22 4:00","Motor Current A":"0.00","Motor Current B":"109.95","Suction Press A":"0.00","Suction Press B":"118.65","Discharge Press A":"91.99","Discharge Press B":"92.01","Controller SP A":"84.00","Controller SP B":"92.00","Bypass OP A":"30.00","Bypass OP B":"49.71","Filter DP A":"0.00","Filter DP B":"0.00","Vibration A1":"0.06","Vibration A2":"0.05","Vibration A3":"0.73","Vibration A4":"0.68","Bearing Temp A1":"59.67","Bearing Temp A2":"73.26","Vibration B1":"0.06","Vibration B2":"0.05","Vibration B3":"0.73","Vibration B4":"0.68","Bearing Temp B1":"59.67","Bearing Temp B2":"73.26","Total Flow":"17892.15","Discharge Temp A":"1.61","Discharge Temp B":"81.61","Suction Temp":""},{"Date":"1-17-22 8:00","Motor Current A":"0.00","Motor Current B":"111.85","Suction Press A":"0.00","Suction Press B":"128.91","Discharge Press A":"91.92","Discharge Press B":"92.00","Controller SP A":"84.00","Controller SP B":"92.00","Bypass OP A":"30.00","Bypass OP B":"58.33","Filter DP A":"0.00","Filter DP B":"0.00","Vibration A1":"0.06","Vibration A2":"0.04","Vibration A3":"0.75","Vibration A4":"0.70","Bearing Temp A1":"60.36","Bearing Temp A2":"76.16","Vibration B1":"0.06","Vibration B2":"0.04","Vibration B3":"0.75","Vibration B4":"0.70","Bearing Temp B1":"60.36","Bearing Temp B2":"76.16","Total Flow":"19532.46","Discharge Temp A":"1.00","Discharge Temp B":"81.00","Suction Temp":""},{"Date":"1-18-22 12:00","Motor Current A":"0.00","Motor Current B":"112.88","Suction Press A":"0.44","Suction Press B":"138.87","Discharge Press A":"91.93","Discharge Press B":"92.00","Controller SP A":"84.00","Controller SP B":"92.00","Bypass OP A":"30.00","Bypass OP B":"38.09","Filter DP A":"0.44","Filter DP B":"0.44","Vibration A1":"0.06","Vibration A2":"0.06","Vibration A3":"0.70","Vibration A4":"0.73","Bearing Temp A1":"36.87","Bearing Temp A2":"50.21","Vibration B1":"0.06","Vibration B2":"0.06","Vibration B3":"0.70","Vibration B4":"0.73","Bearing Temp B1":"36.87","Bearing Temp B2":"50.21","Total Flow":"19099.58","Discharge Temp A":"-18.17","Discharge Temp B":"61.83","Suction Temp":""},{"Date":"1-19-22 16:00","Motor Current A":"0.00","Motor Current B":"112.38","Suction Press A":"0.00","Suction Press B":"133.87","Discharge Press A":"91.95","Discharge Press B":"92.01","Controller SP A":"84.00","Controller SP B":"92.00","Bypass OP A":"30.00","Bypass OP B":"39.61","Filter DP A":"0.00","Filter DP B":"0.00","Vibration A1":"0.06","Vibration A2":"0.04","Vibration A3":"0.70","Vibration A4":"0.79","Bearing Temp A1":"41.42","Bearing Temp A2":"61.25","Vibration B1":"0.06","Vibration B2":"0.04","Vibration B3":"0.70","Vibration B4":"0.79","Bearing Temp B1":"41.42","Bearing Temp B2":"61.25","Total Flow":"19136.75","Discharge Temp A":"-21.20","Discharge Temp B":"58.80","Suction Temp":""},{"Date":"1-20-22 20:00","Motor Current A":"0.00","Motor Current B":"111.33","Suction Press A":"0.13","Suction Press B":"142.39","Discharge Press A":"91.98","Discharge Press B":"92.03","Controller SP A":"84.00","Controller SP B":"92.00","Bypass OP A":"30.00","Bypass OP B":"58.80","Filter DP A":"0.13","Filter DP B":"0.13","Vibration A1":"0.06","Vibration A2":"0.04","Vibration A3":"0.69","Vibration A4":"0.67","Bearing Temp A1":"52.71","Bearing Temp A2":"62.32","Vibration B1":"0.06","Vibration B2":"0.04","Vibration B3":"0.69","Vibration B4":"0.67","Bearing Temp B1":"52.71","Bearing Temp B2":"62.32","Total Flow":"19344.89","Discharge Temp A":"-2.51","Discharge Temp B":"77.49","Suction Temp":""},{"Date":"1-22-22 0:00","Motor Current A":"0.00","Motor Current B":"111.70","Suction Press A":"0.00","Suction Press B":"151.20","Discharge Press A":"91.87","Discharge Press B":"91.97","Controller SP A":"84.00","Controller SP B":"92.00","Bypass OP A":"30.00","Bypass OP B":"51.26","Filter DP A":"0.00","Filter DP B":"0.00","Vibration A1":"0.06","Vibration A2":"0.05","Vibration A3":"0.75","Vibration A4":"0.73","Bearing Temp A1":"56.91","Bearing Temp A2":"69.96","Vibration B1":"0.06","Vibration B2":"0.05","Vibration B3":"0.75","Vibration B4":"0.73","Bearing Temp B1":"56.91","Bearing Temp B2":"69.96","Total Flow":"19383.82","Discharge Temp A":"-4.43","Discharge Temp B":"75.57","Suction Temp":""},{"Date":"1-23-22 4:00","Motor Current A":"0.00","Motor Current B":"112.75","Suction Press A":"0.00","Suction Press B":"159.29","Discharge Press A":"92.00","Discharge Press B":"92.00","Controller SP A":"84.00","Controller SP B":"92.00","Bypass OP A":"30.00","Bypass OP B":"61.00","Filter DP A":"0.00","Filter DP B":"0.00","Vibration A1":"0.05","Vibration A2":"0.04","Vibration A3":"0.73","Vibration A4":"0.70","Bearing Temp A1":"63.89","Bearing Temp A2":"76.92","Vibration B1":"0.05","Vibration B2":"0.04","Vibration B3":"0.73","Vibration B4":"0.70","Bearing Temp B1":"63.89","Bearing Temp B2":"76.92","Total Flow":"19698.80","Discharge Temp A":"4.01","Discharge Temp B":"84.01","Suction Temp":""}];
+
+// ═══════════════════════════════════════════════════════
+// WIRING
+// ═══════════════════════════════════════════════════════
+
+// Tabs
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".tab-panel").forEach(x=>x.classList.remove("active"));t.classList.add("active");document.getElementById("panel-"+t.dataset.tab).classList.add("active");}));
+
+// CSV upload
+document.getElementById("csvInput").addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;document.getElementById("upStatus").textContent="Parsing...";Papa.parse(f,{header:true,skipEmptyLines:true,complete:r=>{currentRows=r.data;document.getElementById("upStatus").textContent=f.name+" · "+currentRows.length+" rows";runProcess();}});});
+
+// Demo button
+document.getElementById("loadDemoBtn").addEventListener("click",()=>{currentRows=DEMO_SERIES;document.getElementById("upStatus").textContent="Demo loaded · "+DEMO_SERIES.length+" rows";runProcess();});
+
+// Recalculate
+document.getElementById("recalcBtn").addEventListener("click",runProcess);
+document.querySelectorAll(".config-input").forEach(inp=>inp.addEventListener("change",runProcess));
+
+// Export
+document.getElementById("btnExport").addEventListener("click",()=>{if(!currentBatch||!currentBatch.processed.length)return;const hdrs=["Timestamp","Blower","Power_kW","PR","dP_bar","Flow","eff_poly","eff_isen","eff_fluid","Vib_mms","Brg_C","Status"];const rows=currentBatch.processed.map(r=>{const ts=r.timestamp;return[`${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,"0")}-${String(ts.getDate()).padStart(2,"0")} ${String(ts.getHours()).padStart(2,"0")}:${String(ts.getMinutes()).padStart(2,"0")}`,r.active,fmt(r.power,1),fmt(r.pr,4),fmt(r.dp,3),fmt(r.flow,0),fmt(r.eff_poly,2),fmt(r.eff_isen,2),fmt(r.eff_fluid,2),fmt(r.vmax,2),fmt(r.bmax,1),r.status].join(",");});const csv=hdrs.join(",")+"\n"+rows.join("\n");const blob=new Blob([csv],{type:"text/csv"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="air-blower-export.csv";a.click();});
+
+// Manual panel
+document.getElementById("btnManual").addEventListener("click",()=>{document.getElementById("manualPanel").classList.add("open");document.getElementById("manualOverlay").style.display="block";});
+document.getElementById("manualClose").addEventListener("click",()=>{document.getElementById("manualPanel").classList.remove("open");document.getElementById("manualOverlay").style.display="none";});
+document.getElementById("manualOverlay").addEventListener("click",()=>{document.getElementById("manualPanel").classList.remove("open");document.getElementById("manualOverlay").style.display="none";});
+
+// Auto-load demo
+currentRows=DEMO_SERIES;document.getElementById("upStatus").textContent="Demo auto-loaded · "+DEMO_SERIES.length+" rows";runProcess();
+
+document.getElementById("manualPdf").addEventListener("click",function(){
+  var body=document.querySelector(".manual-panel-body").innerHTML;
+  var win=window.open("","_blank");
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Engineering Manual — Air Blower</title>'+
+    '<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">'+
+    '<style>body{font-family:\'IBM Plex Sans\',-apple-system,sans-serif;font-size:13px;line-height:1.7;color:#32302F;max-width:700px;margin:40px auto;padding:0 24px}'+
+    'h1{font-size:20px;font-weight:700;color:#463B33;border-bottom:2px solid #E29C57;padding-bottom:8px;margin-bottom:24px}'+
+    'h3{font-size:14px;font-weight:600;color:#763D16;margin:20px 0 8px}'+
+    'p{margin-bottom:10px}'+
+    'code{background:#F7F6F2;padding:2px 6px;border-radius:4px;font-family:\'IBM Plex Mono\',monospace;font-size:12px}'+
+    'strong{color:#463B33}'+
+    '@media print{body{margin:20px}@page{margin:1.5cm}}</style></head><body>'+
+    '<h1>Engineering Manual — Air Blower</h1>'+body+'</body></html>');
+  win.document.close();
+  setTimeout(function(){win.print();},400);
+});
+</script>
+</body>
+</html>

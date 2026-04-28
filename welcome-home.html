@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ChemDash — Welcome</title>
+<title>ChemDash — Home</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -42,7 +42,7 @@
   --radius-status: 12px;
   --radius-alert: 10px;
   --radius-nav-icon: 8px;
-  --sidebar-width: 64px;
+  --sidebar-width: 180px;
   --topbar-height: 56px;
   --content-margin: 24px;
   --tile-gap: 16px;
@@ -73,26 +73,48 @@ body {
   box-shadow: var(--shadow-sidebar);
   display: flex;
   flex-direction: column;
-  align-items: center;
   padding-top: 16px;
   z-index: 10;
 }
+.sidebar-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 16px; margin-bottom: 32px;
+}
 .sidebar-logo {
   width: 36px; height: 36px; border-radius: 50%;
-  background: var(--gold-500); margin-bottom: 28px;
+  background: var(--gold-500); flex-shrink: 0;
+  text-decoration: none;
 }
+.sidebar-title {
+  font-size: 15px; font-weight: 600; color: #FFFFFF;
+  letter-spacing: 0.3px;
+}
+
+.nav-section-label {
+  font-size: 10px; font-weight: 500; color: rgba(255,255,255,0.35);
+  text-transform: uppercase; letter-spacing: 1.2px;
+  padding: 0 16px; margin-bottom: 8px; margin-top: 8px;
+}
+
 .nav-item {
-  width: 32px; height: 32px; border-radius: var(--radius-nav-icon);
-  display: flex; align-items: center; justify-content: center;
-  margin-bottom: 24px; cursor: pointer; transition: background 0.15s;
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 16px;
+  border-radius: var(--radius-nav-icon);
+  margin: 0 8px 2px 8px;
+  cursor: pointer; transition: background 0.15s;
+  text-decoration: none; color: rgba(255,255,255,0.6);
+  font-size: 13px; font-weight: 500;
 }
-.nav-item:hover { background: rgba(255,255,255,0.1); }
-.nav-item.active { background: rgba(255,255,255,0.15); }
-.nav-dot {
-  width: 16px; height: 16px; border-radius: 50%;
-  background: white; opacity: 0.4;
+.nav-item:hover { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.85); }
+.nav-item.active { background: rgba(255,255,255,0.12); color: #FFFFFF; }
+
+.nav-icon {
+  width: 18px; height: 18px; display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
 }
-.nav-item.active .nav-dot { opacity: 1; }
+.nav-icon svg { width: 18px; height: 18px; }
+
+.sidebar-spacer { flex: 1; }
 
 /* ── TOPBAR ── */
 .topbar {
@@ -132,37 +154,7 @@ body {
   margin-bottom: 28px;
 }
 
-/* ── SUMMARY STATS ── */
-.stat-row {
-  display: flex; gap: 20px; margin-bottom: 32px;
-}
-.stat-card {
-  width: 200px; height: 64px;
-  background: var(--surface-card);
-  border: 1px solid var(--border-card);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-card);
-  padding: 12px 20px;
-  display: flex; flex-direction: column;
-  transition: border-color 0.15s;
-}
-.stat-card:hover { border-color: var(--gold-500); }
-.stat-label {
-  font-size: 12px; font-weight: 500; color: var(--text-secondary);
-  margin-bottom: 2px;
-}
-.stat-value-row {
-  display: flex; align-items: center; gap: 8px;
-}
-.stat-value {
-  font-family: var(--font-data);
-  font-size: 18px; font-weight: 500;
-}
-.stat-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-}
-
-/* ── EQUIPMENT FLEET ── */
+/* ── EQUIPMENT DASHBOARDS ── */
 .section-heading {
   font-size: 16px; font-weight: 600; margin-bottom: 4px;
 }
@@ -171,12 +163,14 @@ body {
 }
 
 .equipment-grid {
-  display: flex; gap: var(--tile-gap); margin-bottom: 32px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--tile-gap);
+  margin-bottom: 32px;
 }
 
 .eq-card {
-  flex: 1; min-width: 0;
-  height: 200px;
+  min-height: 200px;
   background: var(--surface-card);
   border: 1px solid var(--border-card);
   border-radius: var(--radius-card);
@@ -186,6 +180,7 @@ body {
   position: relative;
   cursor: pointer;
   transition: border-color 0.15s, transform 0.2s, box-shadow 0.2s;
+  text-decoration: none; color: inherit;
 }
 .eq-card:hover {
   border-color: var(--gold-500);
@@ -203,7 +198,6 @@ body {
 
 .eq-name {
   font-size: 14px; font-weight: 600; margin-bottom: 2px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .eq-unit {
   font-size: 12px; color: var(--text-secondary); margin-bottom: auto;
@@ -211,13 +205,10 @@ body {
 
 .eq-footer {
   display: flex; align-items: center; justify-content: space-between;
+  margin-top: 12px;
 }
-.eq-footer-left {
-  display: flex; flex-direction: column; gap: 8px;
-}
-.eq-metric {
-  font-family: var(--font-data);
-  font-size: 13px; font-weight: 500;
+.eq-desc {
+  font-size: 12px; color: var(--text-secondary); line-height: 1.4;
 }
 
 .eq-arrow {
@@ -228,59 +219,6 @@ body {
   color: var(--gold-600);
   transform: translateX(2px);
 }
-
-/* Alert badge on card */
-.eq-badge {
-  position: absolute; top: 20px; right: 20px;
-  width: 24px; height: 24px; border-radius: 12px;
-  background: var(--status-advisory-bg);
-  color: var(--status-advisory);
-  font-size: 11px; font-weight: 500;
-  display: flex; align-items: center; justify-content: center;
-}
-
-/* Status pill */
-.status-pill {
-  display: inline-flex; align-items: center; gap: 6px;
-  height: 24px; padding: 0 10px;
-  border-radius: var(--radius-status);
-  font-size: 11px; font-weight: 500;
-}
-.status-pill .dot { width: 6px; height: 6px; border-radius: 50%; }
-.status-pill.normal { background: var(--status-normal-bg); color: var(--status-normal); }
-.status-pill.normal .dot { background: var(--status-normal); }
-.status-pill.advisory { background: var(--status-advisory-bg); color: var(--status-advisory); }
-.status-pill.advisory .dot { background: var(--status-advisory); }
-
-/* ── RECENT ACTIVITY ── */
-.activity-card {
-  background: var(--surface-card);
-  border: 1px solid var(--border-card);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-card);
-  padding: 8px 0;
-}
-
-.activity-row {
-  display: flex; align-items: flex-start; gap: 16px;
-  padding: 10px 20px;
-}
-.activity-row + .activity-row {
-  border-top: 1px solid var(--border-card);
-}
-
-.activity-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  margin-top: 5px; flex-shrink: 0;
-}
-
-.activity-content { flex: 1; }
-.activity-msg {
-  font-size: 13px; color: var(--text-primary); margin-bottom: 2px;
-}
-.activity-time {
-  font-size: 11px; color: var(--text-secondary);
-}
 </style>
 </head>
 <body>
@@ -288,18 +226,34 @@ body {
 <div class="shell">
   <!-- SIDEBAR -->
   <nav class="sidebar">
-    <a class="sidebar-logo" href="welcome-home.html" title="Home"></a>
-    <div class="nav-item active" title="Dashboard"><div class="nav-dot"></div></div>
-    <div class="nav-item" title="Equipment"><div class="nav-dot"></div></div>
-    <div class="nav-item" title="Alerts"><div class="nav-dot"></div></div>
-    <div class="nav-item" title="Settings"><div class="nav-dot"></div></div>
+    <div class="sidebar-header">
+      <a class="sidebar-logo" href="welcome-home.html" title="Home"></a>
+      <span class="sidebar-title">ChemDash</span>
+    </div>
+
+    <div class="nav-section-label">Navigation</div>
+    <a class="nav-item active" href="welcome-home.html">
+      <span class="nav-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7.5L9 2l7 5.5V15a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 012 15V7.5z"/><path d="M6.5 16.5V10h5v6.5"/></svg></span>
+      Home
+    </a>
+    <a class="nav-item" href="#dashboards" onclick="document.getElementById('equipSection').scrollIntoView({behavior:'smooth'}); return false;">
+      <span class="nav-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="5.5" height="5.5" rx="1"/><rect x="10.5" y="2" width="5.5" height="5.5" rx="1"/><rect x="2" y="10.5" width="5.5" height="5.5" rx="1"/><rect x="10.5" y="10.5" width="5.5" height="5.5" rx="1"/></svg></span>
+      Dashboards
+    </a>
+
+    <div class="sidebar-spacer"></div>
+
+    <a class="nav-item" href="#" style="margin-bottom: 16px;">
+      <span class="nav-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3"/><path d="M14.7 11.1a1.2 1.2 0 00.2 1.3l.04.04a1.44 1.44 0 11-2.04 2.04l-.04-.04a1.2 1.2 0 00-1.3-.2 1.2 1.2 0 00-.72 1.1v.12a1.44 1.44 0 11-2.88 0v-.06a1.2 1.2 0 00-.78-1.1 1.2 1.2 0 00-1.3.2l-.04.04a1.44 1.44 0 11-2.04-2.04l.04-.04a1.2 1.2 0 00.2-1.3 1.2 1.2 0 00-1.1-.72H3.44a1.44 1.44 0 110-2.88h.06a1.2 1.2 0 001.1-.78 1.2 1.2 0 00-.2-1.3l-.04-.04a1.44 1.44 0 112.04-2.04l.04.04a1.2 1.2 0 001.3.2h.06a1.2 1.2 0 00.72-1.1V3.44a1.44 1.44 0 112.88 0v.06a1.2 1.2 0 00.72 1.1 1.2 1.2 0 001.3-.2l.04-.04a1.44 1.44 0 112.04 2.04l-.04.04a1.2 1.2 0 00-.2 1.3v.06a1.2 1.2 0 001.1.72h.12a1.44 1.44 0 110 2.88h-.06a1.2 1.2 0 00-1.1.72z"/></svg></span>
+      Settings
+    </a>
   </nav>
 
   <!-- TOPBAR -->
   <header class="topbar">
     <div class="topbar-brand">
       <span class="brand-name">ChemDash</span>
-      <span class="brand-env">Production</span>
+      <span class="brand-env">Portfolio</span>
     </div>
     <div class="avatar"></div>
   </header>
@@ -309,72 +263,69 @@ body {
     <h1 class="greeting" id="greeting"></h1>
     <p class="greeting-sub" id="greetingSub"></p>
 
-    <!-- SUMMARY STATS -->
-    <div class="stat-row" id="statRow"></div>
-
-    <!-- EQUIPMENT FLEET -->
-    <h2 class="section-heading">Equipment Fleet</h2>
-    <p class="section-sub">Select equipment to view detailed monitoring dashboard</p>
+    <!-- EQUIPMENT DASHBOARDS -->
+    <div id="equipSection">
+      <h2 class="section-heading">Equipment Dashboards</h2>
+      <p class="section-sub">Select a model to view its detailed monitoring dashboard</p>
+    </div>
     <div class="equipment-grid" id="equipGrid"></div>
-
-    <!-- RECENT ACTIVITY -->
-    <h2 class="section-heading" style="margin-bottom: 12px;">Recent Activity</h2>
-    <div class="activity-card" id="activityList"></div>
   </main>
 </div>
 
 <script>
 // ═══════════════════════════════════════════
-// DATA
+// DATA — Real 5 models from the project
 // ═══════════════════════════════════════════
-
-const stats = [
-  { label: 'Equipment Online', value: '12 / 14', color: 'var(--status-normal)' },
-  { label: 'Active Alerts', value: '3', color: 'var(--status-advisory)' },
-  { label: 'Avg Uptime (30d)', value: '98.7%', color: 'var(--status-normal)' },
-];
 
 const equipment = [
-  { name: 'RO Membrane Analyzer', unit: 'Unit A-101', status: 'normal', alerts: 1, metric: '24.3 LMH', href: 'equipment-dashboard.html' },
-  { name: 'Distillation Column', unit: 'Column DC-200', status: 'advisory', alerts: 2, metric: '87.2°C top', href: 'distillation-column.html' },
-  { name: 'Heat Exchanger', unit: 'HX-301', status: 'normal', alerts: 0, metric: 'ΔT 12.4°C', href: 'heat-exchanger.html' },
-  { name: 'Chemical Reactor', unit: 'CSTR-401', status: 'normal', alerts: 0, metric: 'Conv. 94.1%', href: 'chemical-reactor.html' },
-  { name: 'Compressor System', unit: 'K-501', status: 'normal', alerts: 1, metric: '2,450 RPM', href: 'compressor-system.html' },
-];
-
-const activities = [
-  { msg: 'CIP completed on RO Membrane Analyzer A-101', time: '6 days ago', type: 'ok' },
-  { msg: 'TMP advisory threshold crossed on A-101', time: '14 min ago', type: 'warn' },
-  { msg: 'Scheduled maintenance: Compressor K-501', time: 'Tomorrow, 09:00', type: 'ok' },
+  {
+    name: 'Air Blower',
+    unit: 'Dual-Train Centrifugal',
+    desc: 'ASME PTC 10 efficiency, ISO 10816 vibration, bearing health',
+    icon: 'AB',
+    href: 'air-blower.html'
+  },
+  {
+    name: 'Fired Heater Efficiency',
+    unit: 'Gas-Fired Process Heater',
+    desc: 'Direct & indirect efficiency, loss breakdown, excess air monitoring',
+    icon: 'FH',
+    href: 'fired-heater.html'
+  },
+  {
+    name: 'Shell & Tube Exchanger',
+    unit: 'TEMA RCB Crude Preheater',
+    desc: 'LMTD effectiveness, fouling tracking, ΔP monitoring',
+    icon: 'HX',
+    href: 'shell-tube-exchanger.html'
+  },
+  {
+    name: 'Membrane Analyzer',
+    unit: 'H₂ Recovery Module M-301',
+    desc: 'Permeance tracking, H₂ recovery & purity, selectivity',
+    icon: 'MA',
+    href: 'membrane-analyzer.html'
+  },
+  {
+    name: 'Furnace Skin Temp',
+    unit: 'Radiant Section F-201',
+    desc: 'Tube skin prediction, residual drift detection, TMT classification',
+    icon: 'FT',
+    href: 'furnace-skin-temp.html'
+  },
 ];
 
 // ═══════════════════════════════════════════
-// GREETING (time-aware)
+// GREETING (time-aware, uses user's local time)
 // ═══════════════════════════════════════════
 
 const hour = new Date().getHours();
 const timeGreeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
-document.getElementById('greeting').textContent = `${timeGreeting}, Operator`;
+document.getElementById('greeting').textContent = timeGreeting;
 
 const now = new Date();
 const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-document.getElementById('greetingSub').textContent = `Here's your plant overview for ${dateStr}`;
-
-// ═══════════════════════════════════════════
-// RENDER STATS
-// ═══════════════════════════════════════════
-
-const statRow = document.getElementById('statRow');
-stats.forEach(s => {
-  statRow.innerHTML += `
-    <div class="stat-card">
-      <div class="stat-label">${s.label}</div>
-      <div class="stat-value-row">
-        <span class="stat-value">${s.value}</span>
-        <span class="stat-dot" style="background: ${s.color}"></span>
-      </div>
-    </div>`;
-});
+document.getElementById('greetingSub').textContent = dateStr;
 
 // ═══════════════════════════════════════════
 // RENDER EQUIPMENT CARDS
@@ -382,42 +333,17 @@ stats.forEach(s => {
 
 const equipGrid = document.getElementById('equipGrid');
 equipment.forEach(eq => {
-  const statusLabel = eq.status.charAt(0).toUpperCase() + eq.status.slice(1);
-  const badge = eq.alerts > 0
-    ? `<div class="eq-badge">${eq.alerts}</div>`
-    : '';
-
   equipGrid.innerHTML += `
-    <a class="eq-card" href="${eq.href}" style="text-decoration:none; color:inherit;">
-      ${badge}
-      <div class="eq-icon">${eq.name.charAt(0)}</div>
+    <a class="eq-card" href="${eq.href}">
+      <div class="eq-icon">${eq.icon}</div>
       <div class="eq-name">${eq.name}</div>
       <div class="eq-unit">${eq.unit}</div>
+      <div class="eq-desc">${eq.desc}</div>
       <div class="eq-footer">
-        <div class="eq-footer-left">
-          <span class="status-pill ${eq.status}"><span class="dot"></span>${statusLabel}</span>
-          <span class="eq-metric">${eq.metric}</span>
-        </div>
+        <span></span>
         <span class="eq-arrow">→</span>
       </div>
     </a>`;
-});
-
-// ═══════════════════════════════════════════
-// RENDER ACTIVITY
-// ═══════════════════════════════════════════
-
-const activityList = document.getElementById('activityList');
-activities.forEach(a => {
-  const dotColor = a.type === 'warn' ? 'var(--status-advisory)' : 'var(--status-normal)';
-  activityList.innerHTML += `
-    <div class="activity-row">
-      <div class="activity-dot" style="background: ${dotColor}"></div>
-      <div class="activity-content">
-        <div class="activity-msg">${a.msg}</div>
-        <div class="activity-time">${a.time}</div>
-      </div>
-    </div>`;
 });
 </script>
 </body>

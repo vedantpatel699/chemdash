@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChemDash — Membrane Analyzer</title>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --gold-800:#463B33;--gold-700:#763D16;--gold-600:#BB6E3D;--gold-500:#E29C57;
+  --gold-400:#F9A471;--gold-300:#FCEEE5;--gold-200:#E9E3DE;--gold-100:#F7F6F2;
+  --text-primary:#32302F;--text-secondary:#615E5C;
+  --status-ok:#3A7D52;--status-ok-bg:#E5F0E8;
+  --status-advisory:#C4890E;--status-advisory-bg:#FAF0E0;
+  --status-alarm:#D4432A;--status-alarm-bg:#FCEBEB;
+  --surface-page:#F7F6F2;--surface-card:#FFFFFF;--surface-sidebar:#463B33;
+  --border-card:#E9E3DE;
+  --shadow-card:0 1px 7px rgba(0,0,0,0.05),0 0 16px rgba(0,0,0,0.05);
+  --shadow-sidebar:2px 0 8px rgba(0,0,0,0.06);
+  --shadow-topbar:0 2px 6px rgba(0,0,0,0.04);
+  --radius-card:16px;--radius-status:12px;--radius-alert:10px;--radius-nav:8px;
+  --sidebar-width:180px;--topbar-height:56px;--content-margin:24px;--tile-gap:16px;
+  --font-ui:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,sans-serif;
+  --font-data:'IBM Plex Mono','SF Mono','Consolas',monospace;
+}
+body{font-family:var(--font-ui);background:var(--surface-page);color:var(--text-primary);overflow:hidden;height:100vh}
+
+/* SHELL */
+.shell{display:grid;grid-template-columns:var(--sidebar-width) 1fr;grid-template-rows:var(--topbar-height) 1fr;height:100vh}
+
+/* SIDEBAR */
+.sidebar{grid-row:1/-1;background:var(--surface-sidebar);box-shadow:var(--shadow-sidebar);display:flex;flex-direction:column;padding-top:16px;z-index:10}
+.sidebar-header{display:flex;align-items:center;gap:10px;padding:0 16px;margin-bottom:32px}
+.sidebar-logo{width:36px;height:36px;border-radius:50%;background:var(--gold-500);flex-shrink:0;text-decoration:none}
+.sidebar-title{font-size:15px;font-weight:600;color:#FFF;letter-spacing:0.3px}
+.nav-section-label{font-size:10px;font-weight:500;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1.2px;padding:0 16px;margin-bottom:8px;margin-top:8px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 16px;border-radius:var(--radius-nav);margin:0 8px 2px 8px;cursor:pointer;transition:background 0.15s;text-decoration:none;color:rgba(255,255,255,0.6);font-size:13px;font-weight:500}
+.nav-item:hover{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.85)}
+.nav-item.active{background:rgba(255,255,255,0.12);color:#FFF}
+.nav-icon{width:18px;height:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.nav-icon svg{width:18px;height:18px}
+.sidebar-spacer{flex:1}
+
+/* TOPBAR */
+.topbar{background:var(--surface-card);box-shadow:var(--shadow-topbar);display:flex;align-items:center;padding:0 var(--content-margin);justify-content:space-between;z-index:5}
+.breadcrumb{font-size:13px;color:var(--text-secondary)}
+.breadcrumb a{color:var(--text-secondary);text-decoration:none}
+.breadcrumb a:hover{color:var(--gold-600)}
+.breadcrumb span{margin:0 6px;opacity:0.4}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--gold-600)}
+
+/* CONTENT */
+.content{padding:var(--content-margin);overflow-y:auto}
+
+/* TABS */
+.tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border-card)}
+.tab{padding:10px 16px;font-size:13px;font-weight:500;color:var(--text-secondary);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:color 0.15s}
+.tab:hover{color:var(--text-primary)}
+.tab.active{color:var(--gold-700);border-bottom-color:var(--gold-600)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* CARDS */
+.card{background:var(--surface-card);border:1px solid var(--border-card);border-radius:var(--radius-card);box-shadow:var(--shadow-card);margin-bottom:var(--tile-gap)}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--border-card);font-weight:600;font-size:14px;display:flex;align-items:center;justify-content:space-between}
+.card-body{padding:20px}
+
+/* KPI */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:var(--tile-gap)}
+.kpi-tile{background:var(--surface-card);border:1px solid var(--border-card);border-radius:var(--radius-card);padding:12px 16px;transition:border-color 0.15s}
+.kpi-tile:hover{border-color:var(--gold-500)}
+.kpi-tile .kpi-label{font-size:11px;font-weight:500;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.03em}
+.kpi-tile .kpi-value{font-family:var(--font-data);font-size:20px;font-weight:500;margin-top:4px}
+.kpi-tile .kpi-limit{font-size:10px;color:var(--text-secondary);margin-top:2px}
+.kpi-tile.headline{background:var(--gold-300);border-color:var(--gold-500)}
+
+/* STATUS BANNER */
+.banner{border-left:4px solid var(--status-ok);padding:16px 20px;border-radius:var(--radius-alert);background:var(--surface-card);margin-bottom:var(--tile-gap);box-shadow:var(--shadow-card)}
+.banner h2{margin:0 0 4px 0;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-secondary)}
+.banner .banner-primary{font-size:18px;font-weight:700}
+.banner .banner-detail{margin-top:4px;font-size:13px;color:var(--text-secondary)}
+.banner.status-ok{border-left-color:var(--status-ok)}.banner.status-ok .banner-primary{color:var(--status-ok)}
+.banner.status-advisory{border-left-color:var(--status-advisory);background:var(--status-advisory-bg)}.banner.status-advisory .banner-primary{color:var(--status-advisory)}
+.banner.status-alarm{border-left-color:var(--status-alarm);background:var(--status-alarm-bg)}.banner.status-alarm .banner-primary{color:var(--status-alarm)}
+.alert-item{padding:8px 12px;border-radius:6px;margin-top:8px;font-size:13px}
+.alert-item.severity-advisory{background:var(--status-advisory-bg);color:var(--status-advisory);border-left:3px solid var(--status-advisory)}
+.alert-item.severity-alarm{background:var(--status-alarm-bg);color:var(--status-alarm);border-left:3px solid var(--status-alarm)}
+.alert-item .src{font-size:10px;color:var(--text-secondary);display:block;margin-top:2px}
+
+/* CHARTS */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--tile-gap)}
+@media(max-width:1100px){.chart-grid{grid-template-columns:1fr}}
+.chart-box{background:var(--surface-card);border:1px solid var(--border-card);border-radius:var(--radius-card);padding:16px;box-shadow:var(--shadow-card)}
+.chart-box h4{margin:0 0 12px 0;font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.03em}
+.chart-canvas-wrap{position:relative;height:220px}
+
+/* TABLE */
+table.data{width:100%;border-collapse:collapse;font-size:13px}
+table.data th,table.data td{padding:8px 12px;border-bottom:1px solid var(--border-card);text-align:left}
+table.data th{font-weight:600;color:var(--text-secondary);text-transform:uppercase;font-size:11px;letter-spacing:0.03em;background:var(--gold-100)}
+table.data td.num{font-family:var(--font-data);text-align:right}
+.status-pill{display:inline-block;padding:2px 8px;border-radius:var(--radius-status);font-size:11px;font-weight:500}
+.status-pill.ok{background:var(--status-ok-bg);color:var(--status-ok)}
+.status-pill.advisory{background:var(--status-advisory-bg);color:var(--status-advisory)}
+.status-pill.alarm{background:var(--status-alarm-bg);color:var(--status-alarm)}
+
+/* SIDEBAR CONFIG */
+.config-section{padding:0 16px;margin-bottom:16px}
+.config-section h3{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.4);margin:16px 0 8px 0;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.1)}
+.config-section h3:first-child{margin-top:0}
+.form-row{display:flex;flex-direction:column;margin-bottom:8px}
+.form-row label{font-size:11px;font-weight:500;color:rgba(255,255,255,0.5);margin-bottom:3px}
+.config-input{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:6px 10px;font-size:12px;color:#FFF;width:100%;font-family:var(--font-ui)}
+.config-input:focus{outline:none;border-color:var(--gold-500);background:rgba(255,255,255,0.12)}
+.config-input option{background:var(--surface-sidebar);color:#FFF}
+
+/* UPLOAD */
+.upload-box{border:2px dashed rgba(255,255,255,0.2);border-radius:10px;padding:12px;text-align:center;cursor:pointer;transition:background 150ms;display:block;margin:0 16px}
+.upload-box:hover{background:rgba(255,255,255,0.06);border-color:var(--gold-500)}
+.upload-box input{display:none}
+.upload-box .up-title{font-weight:600;color:var(--gold-400);font-size:13px}
+.upload-box .up-sub{font-size:11px;color:rgba(255,255,255,0.4);margin-top:4px}
+
+/* BUTTONS */
+.btn{background:var(--gold-600);color:#FFF;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font-ui);transition:background 0.15s}
+.btn:hover{background:var(--gold-700)}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:6px}
+.btn-outline{background:transparent;color:var(--gold-600);border:1px solid var(--gold-600)}
+.btn-outline:hover{background:var(--gold-300)}
+.btn-sidebar{background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.15);width:calc(100% - 32px);margin:4px 16px;border-radius:8px;padding:8px;font-size:12px;cursor:pointer;font-family:var(--font-ui)}
+.btn-sidebar:hover{background:rgba(255,255,255,0.15);color:#FFF}
+
+/* ACTION BAR */
+.action-bar{display:flex;gap:8px;margin-bottom:var(--tile-gap);flex-wrap:wrap}
+
+/* SUMMARY ROW */
+.summary-row{display:flex;gap:8px;flex-wrap:wrap}
+.summary-row .stat{background:var(--gold-100);padding:6px 12px;border-radius:8px;font-size:13px}
+.summary-row .stat strong{color:var(--gold-700);font-family:var(--font-data)}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:48px;color:var(--text-secondary)}
+.empty-state h3{margin:0 0 8px 0;color:var(--text-primary);font-weight:600}
+
+/* STREAM TABLE */
+.stream-table{width:100%;border-collapse:collapse;font-size:12px}
+.stream-table th{background:var(--gold-100);padding:8px 12px;text-align:left;font-weight:600;color:var(--text-secondary);font-size:10px;text-transform:uppercase;letter-spacing:0.03em;border-bottom:1px solid var(--border-card)}
+.stream-table td{padding:8px 12px;border-bottom:1px solid var(--border-card)}
+.stream-table td.num{font-family:var(--font-data);text-align:right}
+.stream-label{font-weight:600;color:var(--text-primary);font-size:13px}
+
+/* MANUAL PANEL */
+.manual-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:100}
+.manual-panel{position:fixed;top:0;right:0;width:560px;height:100vh;background:var(--surface-card);box-shadow:-4px 0 24px rgba(0,0,0,0.12);z-index:101;display:none;flex-direction:column}
+.manual-panel.open{display:flex}
+.manual-panel-header{padding:16px 20px;border-bottom:1px solid var(--border-card);display:flex;align-items:center;justify-content:space-between}
+.manual-panel-header h3{font-size:16px;font-weight:600}
+.manual-panel-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-secondary);padding:4px 8px}
+.manual-pdf-btn{background:var(--gold-500);color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font-ui);margin-right:8px}.manual-pdf-btn:hover{background:var(--gold-600)}
+
+.manual-panel-body{flex:1;overflow-y:auto;padding:20px;font-size:14px;line-height:1.6}
+.manual-panel-body h3{margin:20px 0 8px 0;font-size:15px;font-weight:600;color:var(--gold-700)}
+.manual-panel-body h3:first-child{margin-top:0}
+.manual-panel-body p{margin-bottom:12px}
+.manual-panel-body code{background:var(--gold-100);padding:2px 6px;border-radius:4px;font-family:var(--font-data);font-size:13px}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <a class="sidebar-logo" href="welcome-home.html" title="Home"></a>
+      <span class="sidebar-title">ChemDash</span>
+    </div>
+    <div class="nav-section-label">Navigation</div>
+    <a class="nav-item" href="welcome-home.html">
+      <span class="nav-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7.5L9 2l7 5.5V15a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 012 15V7.5z"/><path d="M6.5 16.5V10h5v6.5"/></svg></span>
+      Home
+    </a>
+    <a class="nav-item active" href="#">
+      <span class="nav-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="5.5" height="5.5" rx="1"/><rect x="10.5" y="2" width="5.5" height="5.5" rx="1"/><rect x="2" y="10.5" width="5.5" height="5.5" rx="1"/><rect x="10.5" y="10.5" width="5.5" height="5.5" rx="1"/></svg></span>
+      Dashboard
+    </a>
+    <div class="sidebar-spacer"></div>
+
+    <div class="nav-section-label">Data</div>
+    <label class="upload-box" for="csvInput">
+      <input type="file" id="csvInput" accept=".csv"/>
+      <div class="up-title">Upload CSV</div>
+      <div class="up-sub" id="upStatus">No file loaded</div>
+    </label>
+    <button class="btn-sidebar" id="loadDemoBtn" style="margin-top:6px">Load demo data</button>
+
+    <div class="config-section">
+      <h3>Baseline</h3>
+      <div class="form-row"><label>Q_H2 baseline (Nm3/hr·bar)</label><input class="config-input" type="number" id="setQ_base" value="586" step="10"/></div>
+      <div class="form-row"><label>alpha design (mol %)</label><input class="config-input" type="number" id="setAlpha" value="30" step="1"/></div>
+      <div class="form-row"><label>Atm pressure (bar)</label><input class="config-input" type="number" id="setPatm" value="1.013" step="0.001"/></div>
+
+      <h3>Limits</h3>
+      <div class="form-row"><label>Permeance drop adv (%)</label><input class="config-input" type="number" id="limPercAdv" value="5" step="0.5"/></div>
+      <div class="form-row"><label>Permeance drop alarm</label><input class="config-input" type="number" id="limPercAlarm" value="10" step="0.5"/></div>
+      <div class="form-row"><label>Perm H2 min (mol %)</label><input class="config-input" type="number" id="limPermH2" value="93" step="0.1"/></div>
+      <div class="form-row"><label>Recovery min (%)</label><input class="config-input" type="number" id="limRecMin" value="75" step="1"/></div>
+      <div class="form-row"><label>Mass balance max gap (%)</label><input class="config-input" type="number" id="limMB" value="3" step="0.1"/></div>
+    </div>
+    <button class="btn-sidebar" id="recalcBtn">Recalculate</button>
+    <div style="height:16px"></div>
+  </nav>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="breadcrumb">
+      <a href="welcome-home.html">Home</a><span>/</span>Membrane Analyzer
+    </div>
+    <div class="topbar-right">
+      <div class="avatar"></div>
+    </div>
+  </header>
+
+  <!-- CONTENT -->
+  <main class="content">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px">
+      <h1 style="font-size:22px;font-weight:700">H₂ Membrane Analyzer</h1>
+      <span style="font-size:12px;color:var(--text-secondary)">Hollow-fiber · PSA stage</span>
+    </div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:20px">Real-time permeance, recovery, and purity monitoring</p>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="dashboard">Dashboard</button>
+      <button class="tab" data-tab="data">Data & Log</button>
+      <button class="tab" data-tab="about">About</button>
+    </div>
+
+    <!-- ═══ DASHBOARD TAB ═══ -->
+    <section class="tab-panel active" id="panel-dashboard">
+      <div class="action-bar">
+        <button class="btn btn-sm" id="btnExport" title="Export processed data to CSV">Export CSV</button>
+        <button class="btn btn-sm btn-outline" id="btnManual" title="View engineering manual">View Manual</button>
+      </div>
+
+      <div id="statusArea">
+        <div class="empty-state">
+          <h3>No data loaded</h3>
+          <p>Upload a CSV or click <em>Load demo data</em> in the sidebar.</p>
+        </div>
+      </div>
+
+      <div id="kpiArea" style="display:none">
+        <div class="kpi-row">
+          <div class="kpi-tile headline"><div class="kpi-label">Q_H2 Normalized (%)</div><div class="kpi-value" id="kpiQnorm">—</div><div class="kpi-limit">vs baseline</div></div>
+          <div class="kpi-tile"><div class="kpi-label">H2 Recovery (%)</div><div class="kpi-value" id="kpiRec">—</div><div class="kpi-limit" id="kpiRecLim">min 60%</div></div>
+          <div class="kpi-tile"><div class="kpi-label">Stage cut θ (%)</div><div class="kpi-value" id="kpiTheta">—</div><div class="kpi-limit">Q_perm / Q_feed</div></div>
+          <div class="kpi-tile"><div class="kpi-label">Permeate H₂ (mol %)</div><div class="kpi-value" id="kpiPermH2">—</div><div class="kpi-limit" id="kpiPermH2Lim">min 75%</div></div>
+          <div class="kpi-tile"><div class="kpi-label">Selectivity α</div><div class="kpi-value" id="kpiAlpha">—</div><div class="kpi-limit" id="kpiAlphaLim">design 30</div></div>
+          <div class="kpi-tile"><div class="kpi-label">Mass balance (%)</div><div class="kpi-value" id="kpiMB">—</div><div class="kpi-limit" id="kpiMBLim">max gap 5%</div></div>
+        </div>
+
+        <div class="banner status-ok" id="statusBanner">
+          <h2>Overall Status</h2>
+          <div class="banner-primary" id="statusText">OK</div>
+          <div class="banner-detail" id="statusDetail">No active alerts.</div>
+          <div id="alertList"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">Stream Compositions</div>
+          <div class="card-body" style="overflow-x:auto">
+            <table class="stream-table">
+              <thead>
+                <tr><th>Stream</th><th>Flow (Nm3/hr)</th><th>H2 (mol %)</th><th>H2 qty (Nm3/hr)</th><th>Pressure (bar g)</th></tr>
+              </thead>
+              <tbody id="streamBody">
+                <tr><td colspan="5" style="text-align:center;color:var(--text-secondary)">No data</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">Performance Notes</div>
+          <div class="card-body" style="font-size:13px;line-height:1.5">
+            <div id="perfNotes" style="color:var(--text-secondary)">—</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">Trends</div>
+          <div class="card-body">
+            <div class="chart-grid">
+              <div class="chart-box"><h4>Q_norm (%)</h4><div class="chart-canvas-wrap"><canvas id="chart-qnorm"></canvas></div></div>
+              <div class="chart-box"><h4>Recovery (%) & θ (%)</h4><div class="chart-canvas-wrap"><canvas id="chart-rec"></canvas></div></div>
+              <div class="chart-box"><h4>Permeate H2 purity (mol %)</h4><div class="chart-canvas-wrap"><canvas id="chart-purity"></canvas></div></div>
+              <div class="chart-box"><h4>Stage cut & alpha</h4><div class="chart-canvas-wrap"><canvas id="chart-cut"></canvas></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ DATA TAB ═══ -->
+    <section class="tab-panel" id="panel-data">
+      <div class="card">
+        <div class="card-header">Batch summary</div>
+        <div class="card-body"><div class="summary-row" id="batchSummary"><div class="stat">No batch processed.</div></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header">Processed rows (most recent 50)</div>
+        <div class="card-body" style="overflow-x:auto">
+          <table class="data" id="resultTable">
+            <thead><tr><th>Timestamp</th><th>Q_norm (%)</th><th>Rec (%)</th><th>θ (%)</th><th>y_H2 (%)</th><th>α</th><th>MB (%)</th><th>Status</th></tr></thead>
+            <tbody><tr><td colspan="8" style="text-align:center;color:var(--text-secondary)">No rows processed.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ ABOUT TAB ═══ -->
+    <section class="tab-panel" id="panel-about">
+      <div class="card"><div class="card-body">
+        <h3 style="margin-top:0;font-size:15px;font-weight:600;color:var(--gold-700)">Formulas</h3>
+        <p><strong>Normalized flow</strong>: Q_norm = (Q_H2_perm / Q_baseline) × 100 [%]</p>
+        <p><strong>Recovery</strong>: Rec = (Q_H2_perm / Q_H2_feed) × 100 [%]</p>
+        <p><strong>Stage cut</strong>: θ = (Q_perm / Q_feed) × 100 [%]</p>
+        <p><strong>Selectivity</strong>: α = (y_H2 / (100 - y_H2)) × (P_res / P_perm) [ideal]</p>
+        <p><strong>Mass balance</strong>: gap = |Q_feed - (Q_perm + Q_res)| / Q_feed × 100 [%]</p>
+        <h3 style="font-size:15px;font-weight:600;color:var(--gold-700);margin-top:16px">Alert Thresholds</h3>
+        <p>Permeance drop: advisory at 5%, alarm at 10%. Perm H2 min 93 mol %. Recovery min 75%. Mass balance max 3% gap.</p>
+        <h3 style="font-size:15px;font-weight:600;color:var(--gold-700);margin-top:16px">Scope</h3>
+        <p>Reference-grade PoC. Single-stage hollow-fiber H2 separation. Real-time performance tracking, not design validation.</p>
+        <p style="font-size:12px;color:var(--text-secondary);margin-top:8px">ΔP_LM via log-mean pressure difference. Material balances assume ideal gas behavior.</p>
+      </div></div>
+    </section>
+  </main>
+</div>
+
+<!-- MANUAL PANEL -->
+<div class="manual-overlay" id="manualOverlay"></div>
+<div class="manual-panel" id="manualPanel">
+  <div class="manual-panel-header">
+    <h3>Engineering Manual — Membrane Analyzer</h3>
+    <div style="display:flex;align-items:center;gap:4px"><button class="manual-pdf-btn" id="manualPdf">Download PDF</button><button class="manual-panel-close" id="manualClose">&times;</button></div>
+  </div>
+  <div class="manual-panel-body">
+    <h3>1. Purpose & Scope</h3>
+    <p>Real-time hollow-fiber membrane separator monitoring for H2 purification. Tracks permeance, recovery, purity, and mass balance integrity. Single-stage PSA/membrane simulation.</p>
+    <h3>2. Key Metrics</h3>
+    <p><strong>Normalized flow (Q_norm)</strong> — H2 permeate flow as % of design baseline. Indicator of membrane aging and fouling.</p>
+    <p><strong>Recovery</strong> — H2 permeate qty / H2 feed qty. Economic measure; typical 70-85% for single stage.</p>
+    <p><strong>Stage cut (θ)</strong> — Total permeate / total feed. Controls pressure drop and selectivity. Usually 15-35%.</p>
+    <p><strong>Permeate purity (y_H2)</strong> — Mol % H2 in permeate. Spec typically 75-99% depending on application.</p>
+    <p><strong>Selectivity (α)</strong> — H2 preferential transport vs contaminants. Ratio of mole fractions × pressure ratio.</p>
+    <h3>3. Input Variables (13)</h3>
+    <p>Timestamp, Q_feed, y_feed_H2, P_feed, Q_perm, y_perm_H2, P_perm, Q_residue, y_residue_H2, P_residue, T (process temp C), and calculated ΔP_lm.</p>
+    <h3>4. Calculations</h3>
+    <p><code>Q_norm = (Q_H2_perm / Q_baseline) × 100</code></p>
+    <p><code>Recovery = (Q_H2_perm / Q_H2_feed) × 100</code></p>
+    <p><code>θ = (Q_perm / Q_feed) × 100</code></p>
+    <p><code>α = (y_H2 / (1 - y_H2)) × (P_res / P_perm)</code></p>
+    <p><code>MB_gap = |Q_feed - (Q_perm + Q_res)| / Q_feed × 100</code></p>
+    <h3>5. Alert Tiers</h3>
+    <p>Permeance drop: advisory 5%, alarm 10%. Purity: advisory if below 93 mol %. Recovery: advisory if below 75%. MB gap: advisory if above 3%.</p>
+    <h3>6. Assumptions</h3>
+    <p>Ideal gas; T held constant over stage. Permeance = baseline (586 Nm3/hr·bar) unless degraded. No fouling model, only performance deviation.</p>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// TAG ALIASES
+// ═══════════════════════════════════════════════════════
+const TAG_ALIASES={
+  timestamp:["timestamp","Timestamp","Date","date","Time"],
+  q_feed:["q_feed","Feed Flow","Q_feed"],
+  y_feed_h2:["y_feed_h2","Feed H2","Feed_H2_pct"],
+  p_feed_barg:["p_feed_barg","Feed Pressure","P_feed"],
+  q_perm:["q_perm","Permeate Flow","Q_perm"],
+  y_perm_h2:["y_perm_h2","Permeate H2","Perm_H2_pct"],
+  p_perm_barg:["p_perm_barg","Permeate Pressure","P_perm"],
+  q_residue:["q_residue","Residue Flow","Retentate Flow"],
+  y_residue_h2:["y_residue_h2","Residue H2","Retentate H2"],
+  p_residue_barg:["p_residue_barg","Residue Pressure"]
+};
+
+function lookup(row,canonical){const aliases=TAG_ALIASES[canonical]||[canonical];for(const a of aliases){if(row[a]!==undefined&&row[a]!==null&&String(row[a]).trim()!=="")return row[a];}return null;}
+function num(v){if(v===null||v===undefined||v==="")return NaN;if(typeof v==="number")return v;const n=parseFloat(String(v).replace(/,/g,"").trim());return isNaN(n)?NaN:n;}
+function parseTs(v){if(!v)return null;const s=String(v).trim();const m=s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?$/);if(m)return new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+(m[6]||0));const m2=s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{2,4})\s+(\d{1,2}):(\d{2})$/);if(m2){let y=+m2[3];if(y<100)y+=2000;return new Date(y,+m2[1]-1,+m2[2],+m2[4],+m2[5]);}const d=new Date(s);return isNaN(d.getTime())?null:d;}
+
+// ═══════════════════════════════════════════════════════
+// MEMBRANE MATH
+// ═══════════════════════════════════════════════════════
+function calcQH2(q,yh2){return q*yh2/100;}
+function calcQnorm(qh2perm,qbase){return qbase>0?(qh2perm/qbase*100):NaN;}
+function calcRecovery(qh2perm,qh2feed){return qh2feed>0?(qh2perm/qh2feed*100):NaN;}
+function calcStagecut(qperm,qfeed){return qfeed>0?(qperm/qfeed*100):NaN;}
+function calcSelectivity(yh2perm,xh2feed){const yP=yh2perm/100,xF=xh2feed/100;if(yP<=0||yP>=1||xF<=0||xF>=1)return NaN;return(yP/(1-yP))/(xF/(1-xF));}
+function lmDP(xF,xR,yP,pF,pP){const d1=xF*pF-yP*pP,d2=xR*pF-yP*pP;if(d1<=0||d2<=0)return NaN;if(Math.abs(d1-d2)<1e-6)return d1;return(d1-d2)/Math.log(d1/d2);}
+function calcMBgap(qfeed,qperm,qres){if(qfeed<=0)return NaN;return 100*(qfeed-qperm-qres)/qfeed;}
+function buildAlertsMemb(qnorm,rec,yperm,mb,lim){const a=[];if(!isNaN(qnorm)){const drop=100-qnorm;if(drop>lim.perc_alarm)a.push({severity:"alarm",message:`H2 permeance down ${drop.toFixed(1)}% — exceeds alarm ${lim.perc_alarm}%.`,source:"baseline comparison"});else if(drop>lim.perc_adv)a.push({severity:"advisory",message:`H2 permeance down ${drop.toFixed(1)}% — above advisory ${lim.perc_adv}%.`,source:"baseline comparison"});}if(!isNaN(yperm)&&yperm<lim.perm_h2)a.push({severity:"advisory",message:`Permeate H2 ${yperm.toFixed(2)}% below spec ${lim.perm_h2}%.`,source:"product spec"});if(!isNaN(rec)&&rec<lim.rec_min)a.push({severity:"advisory",message:`H2 recovery ${rec.toFixed(1)}% below floor ${lim.rec_min}%.`,source:"performance target"});if(!isNaN(mb)&&Math.abs(mb)>lim.mb_max)a.push({severity:"advisory",message:`Mass-balance gap ${mb>0?"+":""}${mb.toFixed(1)}% exceeds max ${lim.mb_max}%.`,source:"data integrity check"});return a;}
+function rollUp(alerts){if(alerts.some(x=>x.severity==="alarm"))return"alarm";if(alerts.some(x=>x.severity==="advisory"))return"advisory";return"ok";}
+
+// ═══════════════════════════════════════════════════════
+// ROW & BATCH PROCESSOR
+// ═══════════════════════════════════════════════════════
+function processRow(row,s,lim){const ts=parseTs(lookup(row,"timestamp"));if(!ts)return{drop:true,reason:"bad timestamp"};const qf=num(lookup(row,"q_feed")),yfh=num(lookup(row,"y_feed_h2")),pf=num(lookup(row,"p_feed_barg"));const qp=num(lookup(row,"q_perm")),yph=num(lookup(row,"y_perm_h2")),pp=num(lookup(row,"p_perm_barg"));const qr=num(lookup(row,"q_residue")),yrh=num(lookup(row,"y_residue_h2"));if(isNaN(qf)||isNaN(yfh)||isNaN(pf)||isNaN(qp)||isNaN(yph)||isNaN(pp)||isNaN(qr)||isNaN(yrh))return{drop:true,reason:"missing critical tag"};const xF=yfh/100,yP=yph/100,xR=yrh/100;const pFabs=pf+s.patm,pPabs=pp+s.patm;const qh2f=calcQH2(qf,yfh),qh2p=calcQH2(qp,yph);const theta=calcStagecut(qp,qf),rec=calcRecovery(qh2p,qh2f);const alpha=calcSelectivity(yph,yfh);const dP=lmDP(xF,xR,yP,pFabs,pPabs);const qH2=!isNaN(dP)&&dP>0?qh2p/dP:NaN;const qnorm=!isNaN(qH2)?qH2/s.qbase*100:NaN;const qDrop=!isNaN(qnorm)?100-qnorm:NaN;const mb=calcMBgap(qf,qp,qr);const alerts=buildAlertsMemb(qnorm,rec,yph,mb,lim);const status=rollUp(alerts);const qh2r=calcQH2(qr,yrh);return{drop:false,timestamp:ts,qf,yfh,qh2f,pf,qp,yph,qh2p,pp,qr,yrh,qh2r,qnorm,rec,theta,alpha,dP,qH2,qDrop,mb,alerts,status};}
+function processBatch(rows,s,lim){const parsed=[];for(const r of rows){const ts=parseTs(lookup(r,"timestamp"));if(ts)parsed.push([ts,r]);}parsed.sort((a,b)=>a[0]-b[0]);const out=[];let dropped=0;const reasons={};for(const[ts,r]of parsed){const res=processRow(r,s,lim);if(res.drop){dropped++;reasons[res.reason]=(reasons[res.reason]||0)+1;}else{out.push(res);}}return{processed:out,dropped,reasons};}
+
+// ═══════════════════════════════════════════════════════
+// UI
+// ═══════════════════════════════════════════════════════
+let currentRows=[];let currentBatch=null;const charts={};
+function readSettings(){return{qbase:+document.getElementById("setQ_base").value,alpha_design:+document.getElementById("setAlpha").value,patm:+document.getElementById("setPatm").value};}
+function readLimits(){return{perc_adv:+document.getElementById("limPercAdv").value,perc_alarm:+document.getElementById("limPercAlarm").value,perm_h2:+document.getElementById("limPermH2").value,rec_min:+document.getElementById("limRecMin").value,mb_max:+document.getElementById("limMB").value};}
+function fmt(v,d){return(v===null||v===undefined||isNaN(v))?"—":(+v).toFixed(d);}
+
+function renderResult(res,lim,s){document.getElementById("statusArea").style.display="none";document.getElementById("kpiArea").style.display="block";document.getElementById("kpiQnorm").textContent=fmt(res.qnorm,1)+" %";document.getElementById("kpiRec").textContent=fmt(res.rec,1)+" %";document.getElementById("kpiTheta").textContent=fmt(res.theta,1)+" %";document.getElementById("kpiPermH2").textContent=fmt(res.yph,1)+" %";document.getElementById("kpiAlpha").textContent=fmt(res.alpha,2);document.getElementById("kpiAlphaLim").textContent="design "+s.alpha_design;document.getElementById("kpiMB").textContent=fmt(res.mb,2)+" %";document.getElementById("kpiRecLim").textContent="min "+lim.rec_min+"%";document.getElementById("kpiPermH2Lim").textContent="min "+lim.perm_h2+"%";document.getElementById("kpiMBLim").textContent="max "+lim.mb_max+"% gap";const banner=document.getElementById("statusBanner");banner.className="banner status-"+res.status;document.getElementById("statusText").textContent=res.status.toUpperCase();document.getElementById("statusDetail").textContent=res.alerts.length?`${res.alerts.length} active alert(s)`:"No active alerts.";document.getElementById("alertList").innerHTML=res.alerts.map(al=>`<div class="alert-item severity-${al.severity}"><strong>[${al.severity.toUpperCase()}]</strong> ${al.message}<span class="src">Source: ${al.source}</span></div>`).join("");const sb=document.getElementById("streamBody");sb.innerHTML=`<tr><td class="stream-label">Feed</td><td class="num">${fmt(res.qf,1)}</td><td class="num">${fmt(res.yfh,1)}</td><td class="num">${fmt(res.qh2f,1)}</td><td class="num">${fmt(res.pf,2)}</td></tr><tr><td class="stream-label">Permeate</td><td class="num">${fmt(res.qp,1)}</td><td class="num">${fmt(res.yph,1)}</td><td class="num">${fmt(res.qh2p,1)}</td><td class="num">${fmt(res.pp,2)}</td></tr><tr><td class="stream-label">Residue</td><td class="num">${fmt(res.qr,1)}</td><td class="num">${fmt(res.yrh,1)}</td><td class="num">${fmt(res.qh2r,1)}</td><td class="num">${fmt(res.pr,2)}</td></tr>`;const notes=[];if(!isNaN(res.qnorm))notes.push(`Normalized H2 flow: ${res.qnorm.toFixed(1)}% of baseline (${s.qbase} Nm³/hr·bar).`);if(!isNaN(res.rec))notes.push(`Stage recovery: ${res.rec.toFixed(1)}%.`);if(!isNaN(res.theta))notes.push(`Stage cut: ${res.theta.toFixed(1)}%.`);if(!isNaN(res.mb))notes.push(`Mass balance: ${res.mb.toFixed(2)}% gap.`);document.getElementById("perfNotes").textContent=notes.length?notes.join(" "):"-";}
+
+function mkChart(id,labels,datasets){if(charts[id]){charts[id].destroy();}const ctx=document.getElementById("chart-"+id).getContext("2d");const opts={responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{position:"bottom",labels:{font:{size:11,family:"IBM Plex Sans"},boxWidth:12}}},scales:{x:{ticks:{maxTicksLimit:6,font:{size:10,family:"IBM Plex Sans"}}},y:{ticks:{font:{size:10,family:"IBM Plex Mono"}}}},elements:{point:{radius:0},line:{borderWidth:1.5,tension:0.1}}};charts[id]=new Chart(ctx,{type:"line",data:{labels,datasets},options:opts});}
+
+function renderBatch(batch){const sumEl=document.getElementById("batchSummary");const tbody=document.getElementById("resultTable").querySelector("tbody");if(!batch||!batch.processed.length){sumEl.innerHTML='<div class="stat">No rows processed.</div>';tbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--text-secondary)">No rows.</td></tr>';return;}const reasons=Object.entries(batch.reasons).map(([k,v])=>`${k}: ${v}`).join("; ")||"none";const sc=batch.processed.reduce((acc,r)=>{acc[r.status]=(acc[r.status]||0)+1;return acc;},{});sumEl.innerHTML=`<div class="stat">Processed: <strong>${batch.processed.length}</strong></div><div class="stat">Dropped: <strong>${batch.dropped}</strong></div><div class="stat">Drop reasons: ${reasons}</div><div class="stat">OK: <strong>${sc.ok||0}</strong></div><div class="stat">Advisory: <strong>${sc.advisory||0}</strong></div><div class="stat">Alarm: <strong>${sc.alarm||0}</strong></div>`;const rows=batch.processed.slice(-50).reverse();tbody.innerHTML=rows.map(r=>{const ts=r.timestamp;const tsStr=`${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,"0")}-${String(ts.getDate()).padStart(2,"0")} ${String(ts.getHours()).padStart(2,"0")}:${String(ts.getMinutes()).padStart(2,"0")}`;return`<tr><td>${tsStr}</td><td class="num">${fmt(r.qnorm,1)}</td><td class="num">${fmt(r.rec,1)}</td><td class="num">${fmt(r.theta,1)}</td><td class="num">${fmt(r.yph,1)}</td><td class="num">${fmt(r.alpha,2)}</td><td class="num">${fmt(r.mb,2)}</td><td><span class="status-pill ${r.status}">${r.status}</span></td></tr>`;}).join("");if(batch.processed.length<2)return;const stride=Math.max(1,Math.floor(batch.processed.length/200));const sample=batch.processed.filter((_,i)=>i%stride===0);const labels=sample.map(r=>{const d=r.timestamp;return`${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;});mkChart("qnorm",labels,[{label:"Q_norm (%)",data:sample.map(r=>r.qnorm),borderColor:"#BB6E3D",backgroundColor:"transparent"}]);mkChart("rec",labels,[{label:"Recovery (%)",data:sample.map(r=>r.rec),borderColor:"#3A7D52",backgroundColor:"transparent"},{label:"θ (%)",data:sample.map(r=>r.theta),borderColor:"#C4890E",backgroundColor:"transparent"}]);mkChart("purity",labels,[{label:"y_H2 (mol %)",data:sample.map(r=>r.yph),borderColor:"#BB6E3D",backgroundColor:"transparent"}]);mkChart("cut",labels,[{label:"θ (%)",data:sample.map(r=>r.theta),borderColor:"#615E5C",backgroundColor:"transparent"},{label:"α",data:sample.map(r=>r.alpha),borderColor:"#D4432A",backgroundColor:"transparent"}]);}
+
+function runProcess(){if(!currentRows.length)return;const s=readSettings(),l=readLimits();currentBatch=processBatch(currentRows,s,l);if(currentBatch.processed.length){renderResult(currentBatch.processed[currentBatch.processed.length-1],l,s);}else{document.getElementById("statusArea").style.display="block";document.getElementById("kpiArea").style.display="none";document.getElementById("statusArea").innerHTML='<div class="empty-state"><h3>All rows dropped</h3><p>Check Data & Log tab for drop reasons.</p></div>';}renderBatch(currentBatch);}
+
+// Demo data — exact 28-row series from original model (6-hour intervals, Feb 1–7)
+const DEMO_SERIES=[{"Timestamp":"2026-02-01 00:00","Feed Flow":"4969","Feed H2":"70.05","Feed Pressure":"29.96","Feed Temp":"40.1","Permeate Flow":"3028","Permeate H2":"95.01","Permeate Pressure":"8.01","Residue Flow":"1940","Residue H2":"31.24"},{"Timestamp":"2026-02-01 06:00","Feed Flow":"5010","Feed H2":"70.49","Feed Pressure":"30.05","Feed Temp":"40.4","Permeate Flow":"3068","Permeate H2":"95.23","Permeate Pressure":"8.04","Residue Flow":"1942","Residue H2":"31.26"},{"Timestamp":"2026-02-01 12:00","Feed Flow":"5048","Feed H2":"69.85","Feed Pressure":"29.99","Feed Temp":"40.0","Permeate Flow":"3042","Permeate H2":"95.14","Permeate Pressure":"8.01","Residue Flow":"2006","Residue H2":"31.56"},{"Timestamp":"2026-02-01 18:00","Feed Flow":"4977","Feed H2":"69.67","Feed Pressure":"30.09","Feed Temp":"39.7","Permeate Flow":"3027","Permeate H2":"95.15","Permeate Pressure":"7.97","Residue Flow":"1950","Residue H2":"29.94"},{"Timestamp":"2026-02-02 00:00","Feed Flow":"5029","Feed H2":"70.40","Feed Pressure":"30.05","Feed Temp":"40.0","Permeate Flow":"3016","Permeate H2":"94.92","Permeate Pressure":"7.98","Residue Flow":"2013","Residue H2":"33.50"},{"Timestamp":"2026-02-02 06:00","Feed Flow":"4991","Feed H2":"69.97","Feed Pressure":"30.08","Feed Temp":"39.5","Permeate Flow":"2999","Permeate H2":"94.83","Permeate Pressure":"7.96","Residue Flow":"1992","Residue H2":"32.35"},{"Timestamp":"2026-02-02 12:00","Feed Flow":"5048","Feed H2":"70.35","Feed Pressure":"29.93","Feed Temp":"40.0","Permeate Flow":"3027","Permeate H2":"95.01","Permeate Pressure":"7.96","Residue Flow":"2021","Residue H2":"33.57"},{"Timestamp":"2026-02-02 18:00","Feed Flow":"4984","Feed H2":"69.88","Feed Pressure":"29.96","Feed Temp":"39.9","Permeate Flow":"3005","Permeate H2":"95.09","Permeate Pressure":"7.96","Residue Flow":"1979","Residue H2":"31.57"},{"Timestamp":"2026-02-03 00:00","Feed Flow":"4998","Feed H2":"70.12","Feed Pressure":"29.99","Feed Temp":"40.3","Permeate Flow":"3001","Permeate H2":"94.85","Permeate Pressure":"8.03","Residue Flow":"1996","Residue H2":"33.03"},{"Timestamp":"2026-02-03 06:00","Feed Flow":"4973","Feed H2":"70.20","Feed Pressure":"29.88","Feed Temp":"40.4","Permeate Flow":"2972","Permeate H2":"94.99","Permeate Pressure":"8.04","Residue Flow":"2001","Residue H2":"33.34"},{"Timestamp":"2026-02-03 12:00","Feed Flow":"4972","Feed H2":"69.86","Feed Pressure":"30.11","Feed Temp":"39.5","Permeate Flow":"2973","Permeate H2":"94.88","Permeate Pressure":"8.00","Residue Flow":"1999","Residue H2":"32.60"},{"Timestamp":"2026-02-03 18:00","Feed Flow":"5012","Feed H2":"70.27","Feed Pressure":"29.85","Feed Temp":"40.3","Permeate Flow":"2978","Permeate H2":"94.74","Permeate Pressure":"8.02","Residue Flow":"2034","Residue H2":"34.43"},{"Timestamp":"2026-02-04 00:00","Feed Flow":"5024","Feed H2":"70.04","Feed Pressure":"29.98","Feed Temp":"40.1","Permeate Flow":"2971","Permeate H2":"94.79","Permeate Pressure":"7.98","Residue Flow":"2053","Residue H2":"34.21"},{"Timestamp":"2026-02-04 06:00","Feed Flow":"5027","Feed H2":"69.73","Feed Pressure":"30.09","Feed Temp":"40.0","Permeate Flow":"2956","Permeate H2":"94.54","Permeate Pressure":"8.04","Residue Flow":"2071","Residue H2":"34.23"},{"Timestamp":"2026-02-04 12:00","Feed Flow":"4990","Feed H2":"69.68","Feed Pressure":"30.08","Feed Temp":"40.0","Permeate Flow":"2943","Permeate H2":"94.68","Permeate Pressure":"7.98","Residue Flow":"2047","Residue H2":"33.76"},{"Timestamp":"2026-02-04 18:00","Feed Flow":"5013","Feed H2":"70.35","Feed Pressure":"30.01","Feed Temp":"39.7","Permeate Flow":"2932","Permeate H2":"94.68","Permeate Pressure":"7.97","Residue Flow":"2081","Residue H2":"35.90"},{"Timestamp":"2026-02-05 00:00","Feed Flow":"5052","Feed H2":"70.27","Feed Pressure":"30.11","Feed Temp":"40.5","Permeate Flow":"2968","Permeate H2":"94.52","Permeate Pressure":"8.01","Residue Flow":"2084","Residue H2":"35.69"},{"Timestamp":"2026-02-05 06:00","Feed Flow":"4983","Feed H2":"70.42","Feed Pressure":"29.94","Feed Temp":"40.0","Permeate Flow":"2955","Permeate H2":"94.39","Permeate Pressure":"8.04","Residue Flow":"2028","Residue H2":"35.39"},{"Timestamp":"2026-02-05 12:00","Feed Flow":"4960","Feed H2":"69.42","Feed Pressure":"30.04","Feed Temp":"40.4","Permeate Flow":"2932","Permeate H2":"94.49","Permeate Pressure":"8.04","Residue Flow":"2028","Residue H2":"33.35"},{"Timestamp":"2026-02-05 18:00","Feed Flow":"4986","Feed H2":"70.39","Feed Pressure":"29.94","Feed Temp":"39.8","Permeate Flow":"2949","Permeate H2":"94.31","Permeate Pressure":"8.04","Residue Flow":"2037","Residue H2":"35.72"},{"Timestamp":"2026-02-06 00:00","Feed Flow":"4986","Feed H2":"69.53","Feed Pressure":"29.97","Feed Temp":"40.5","Permeate Flow":"2902","Permeate H2":"94.20","Permeate Pressure":"7.98","Residue Flow":"2084","Residue H2":"35.02"},{"Timestamp":"2026-02-06 06:00","Feed Flow":"5035","Feed H2":"70.59","Feed Pressure":"30.06","Feed Temp":"40.0","Permeate Flow":"2894","Permeate H2":"94.31","Permeate Pressure":"8.03","Residue Flow":"2141","Residue H2":"38.51"},{"Timestamp":"2026-02-06 12:00","Feed Flow":"5006","Feed H2":"70.46","Feed Pressure":"29.98","Feed Temp":"40.4","Permeate Flow":"2901","Permeate H2":"94.17","Permeate Pressure":"8.02","Residue Flow":"2105","Residue H2":"37.79"},{"Timestamp":"2026-02-06 18:00","Feed Flow":"5001","Feed H2":"69.92","Feed Pressure":"30.04","Feed Temp":"40.2","Permeate Flow":"2881","Permeate H2":"94.40","Permeate Pressure":"7.99","Residue Flow":"2120","Residue H2":"36.73"},{"Timestamp":"2026-02-07 00:00","Feed Flow":"5043","Feed H2":"70.29","Feed Pressure":"29.91","Feed Temp":"39.6","Permeate Flow":"2885","Permeate H2":"94.04","Permeate Pressure":"7.99","Residue Flow":"2158","Residue H2":"38.66"},{"Timestamp":"2026-02-07 06:00","Feed Flow":"4999","Feed H2":"70.09","Feed Pressure":"29.93","Feed Temp":"40.4","Permeate Flow":"2874","Permeate H2":"94.25","Permeate Pressure":"8.02","Residue Flow":"2124","Residue H2":"37.61"},{"Timestamp":"2026-02-07 12:00","Feed Flow":"4953","Feed H2":"70.06","Feed Pressure":"29.95","Feed Temp":"40.2","Permeate Flow":"2877","Permeate H2":"93.96","Permeate Pressure":"7.97","Residue Flow":"2077","Residue H2":"36.93"},{"Timestamp":"2026-02-07 18:00","Feed Flow":"4960","Feed H2":"70.20","Feed Pressure":"29.93","Feed Temp":"40.0","Permeate Flow":"2894","Permeate H2":"94.13","Permeate Pressure":"7.99","Residue Flow":"2066","Residue H2":"36.68"}];
+
+// ═══════════════════════════════════════════════════════
+// WIRING
+// ═══════════════════════════════════════════════════════
+
+// Tabs
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".tab-panel").forEach(x=>x.classList.remove("active"));t.classList.add("active");document.getElementById("panel-"+t.dataset.tab).classList.add("active");}));
+
+// CSV upload
+document.getElementById("csvInput").addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;document.getElementById("upStatus").textContent="Parsing...";Papa.parse(f,{header:true,skipEmptyLines:true,complete:r=>{currentRows=r.data;document.getElementById("upStatus").textContent=f.name+" · "+currentRows.length+" rows";runProcess();}});});
+
+// Demo button
+document.getElementById("loadDemoBtn").addEventListener("click",()=>{currentRows=DEMO_SERIES;document.getElementById("upStatus").textContent="Demo loaded · "+DEMO_SERIES.length+" rows";runProcess();});
+
+// Recalculate
+document.getElementById("recalcBtn").addEventListener("click",runProcess);
+document.querySelectorAll(".config-input").forEach(inp=>inp.addEventListener("change",runProcess));
+
+// Export
+document.getElementById("btnExport").addEventListener("click",()=>{if(!currentBatch||!currentBatch.processed.length)return;const hdrs=["Timestamp","Q_norm_%","Recovery_%","theta_%","y_H2_%","alpha","MB_gap_%","Status"];const rows=currentBatch.processed.map(r=>{const ts=r.timestamp;return[`${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,"0")}-${String(ts.getDate()).padStart(2,"0")} ${String(ts.getHours()).padStart(2,"0")}:${String(ts.getMinutes()).padStart(2,"0")}`,fmt(r.qnorm,1),fmt(r.rec,1),fmt(r.theta,1),fmt(r.yph,1),fmt(r.alpha,2),fmt(r.mb,2),r.status].join(",");});const csv=hdrs.join(",")+"\n"+rows.join("\n");const blob=new Blob([csv],{type:"text/csv"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="membrane-analyzer-export.csv";a.click();});
+
+// Manual panel
+document.getElementById("btnManual").addEventListener("click",()=>{document.getElementById("manualPanel").classList.add("open");document.getElementById("manualOverlay").style.display="block";});
+document.getElementById("manualClose").addEventListener("click",()=>{document.getElementById("manualPanel").classList.remove("open");document.getElementById("manualOverlay").style.display="none";});
+document.getElementById("manualOverlay").addEventListener("click",()=>{document.getElementById("manualPanel").classList.remove("open");document.getElementById("manualOverlay").style.display="none";});
+
+// Auto-load demo
+currentRows=DEMO_SERIES;document.getElementById("upStatus").textContent="Demo auto-loaded · "+DEMO_SERIES.length+" rows";runProcess();
+
+document.getElementById("manualPdf").addEventListener("click",function(){
+  var body=document.querySelector(".manual-panel-body").innerHTML;
+  var win=window.open("","_blank");
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Engineering Manual — Membrane Analyzer</title>'+
+    '<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">'+
+    '<style>body{font-family:\'IBM Plex Sans\',-apple-system,sans-serif;font-size:13px;line-height:1.7;color:#32302F;max-width:700px;margin:40px auto;padding:0 24px}'+
+    'h1{font-size:20px;font-weight:700;color:#463B33;border-bottom:2px solid #E29C57;padding-bottom:8px;margin-bottom:24px}'+
+    'h3{font-size:14px;font-weight:600;color:#763D16;margin:20px 0 8px}'+
+    'p{margin-bottom:10px}'+
+    'code{background:#F7F6F2;padding:2px 6px;border-radius:4px;font-family:\'IBM Plex Mono\',monospace;font-size:12px}'+
+    'strong{color:#463B33}'+
+    '@media print{body{margin:20px}@page{margin:1.5cm}}</style></head><body>'+
+    '<h1>Engineering Manual — Membrane Analyzer</h1>'+body+'</body></html>');
+  win.document.close();
+  setTimeout(function(){win.print();},400);
+});
+</script>
+</body>
+</html>

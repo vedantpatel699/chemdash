@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChemDash — Shell & Tube Exchanger</title>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --gold-800:#463B33;--gold-700:#763D16;--gold-600:#BB6E3D;--gold-500:#E29C57;
+  --gold-400:#F9A471;--gold-300:#FCEEE5;--gold-200:#E9E3DE;--gold-100:#F7F6F2;
+  --text-primary:#32302F;--text-secondary:#615E5C;
+  --status-ok:#3A7D52;--status-ok-bg:#E5F0E8;
+  --status-advisory:#C4890E;--status-advisory-bg:#FAF0E0;
+  --status-alarm:#D4432A;--status-alarm-bg:#FCEBEB;
+  --surface-page:#F7F6F2;--surface-card:#FFFFFF;--surface-sidebar:#463B33;
+  --border-card:#E9E3DE;
+  --shadow-card:0 1px 7px rgba(0,0,0,0.05),0 0 16px rgba(0,0,0,0.05);
+  --shadow-sidebar:2px 0 8px rgba(0,0,0,0.06);
+  --shadow-topbar:0 2px 6px rgba(0,0,0,0.04);
+  --radius-card:16px;--radius-status:12px;--radius-alert:10px;--radius-nav:8px;
+  --sidebar-width:180px;--topbar-height:56px;--content-margin:24px;--tile-gap:16px;
+  --font-ui:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,sans-serif;
+  --font-data:'IBM Plex Mono','SF Mono','Consolas',monospace;
+}
+body{font-family:var(--font-ui);background:var(--surface-page);color:var(--text-primary);overflow:hidden;height:100vh}
+
+/* SHELL */
+.shell{display:grid;grid-template-columns:var(--sidebar-width) 1fr;grid-template-rows:var(--topbar-height) 1fr;height:100vh}
+
+/* SIDEBAR */
+.sidebar{grid-row:1/-1;background:var(--surface-sidebar);box-shadow:var(--shadow-sidebar);display:flex;flex-direction:column;padding-top:16px;z-index:10}
+.sidebar-header{display:flex;align-items:center;gap:10px;padding:0 16px;margin-bottom:32px}
+.sidebar-logo{width:36px;height:36px;border-radius:50%;background:var(--gold-500);flex-shrink:0;text-decoration:none}
+.sidebar-title{font-size:15px;font-weight:600;color:#FFF;letter-spacing:0.3px}
+.nav-section-label{font-size:10px;font-weight:500;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1.2px;padding:0 16px;margin-bottom:8px;margin-top:8px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 16px;border-radius:var(--radius-nav);margin:0 8px 2px 8px;cursor:pointer;transition:background 0.15s;text-decoration:none;color:rgba(255,255,255,0.6);font-size:13px;font-weight:500}
+.nav-item:hover{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.85)}
+.nav-item.active{background:rgba(255,255,255,0.12);color:#FFF}
+.nav-icon{width:18px;height:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.nav-icon svg{width:18px;height:18px}
+.sidebar-spacer{flex:1}
+
+/* TOPBAR */
+.topbar{background:var(--surface-card);box-shadow:var(--shadow-topbar);display:flex;align-items:center;padding:0 var(--content-margin);justify-content:space-between;z-index:5}
+.breadcrumb{font-size:13px;color:var(--text-secondary)}
+.breadcrumb a{color:var(--text-secondary);text-decoration:none}
+.breadcrumb a:hover{color:var(--gold-600)}
+.breadcrumb span{margin:0 6px;opacity:0.4}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--gold-600)}
+
+/* CONTENT */
+.content{padding:var(--content-margin);overflow-y:auto}
+
+/* TABS */
+.tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border-card)}
+.tab{padding:10px 16px;font-size:13px;font-weight:500;color:var(--text-secondary);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:color 0.15s}
+.tab:hover{color:var(--text-primary)}
+.tab.active{color:var(--gold-700);border-bottom-color:var(--gold-600)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* CARDS */
+.card{background:var(--surface-card);border:1px solid var(--border-card);border-radius:var(--radius-card);box-shadow:var(--shadow-card);margin-bottom:var(--tile-gap)}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--border-card);font-weight:600;font-size:14px;display:flex;align-items:center;justify-content:space-between}
+.card-body{padding:20px}
+
+/* KPI */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:var(--tile-gap)}
+.kpi-tile{background:var(--surface-card);border:1px solid var(--border-card);border-radius:var(--radius-card);padding:12px 16px;transition:border-color 0.15s}
+.kpi-tile:hover{border-color:var(--gold-500)}
+.kpi-tile .kpi-label{font-size:11px;font-weight:500;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.03em}
+.kpi-tile .kpi-value{font-family:var(--font-data);font-size:20px;font-weight:500;margin-top:4px}
+.kpi-tile .kpi-limit{font-size:10px;color:var(--text-secondary);margin-top:2px}
+.kpi-tile.headline{background:var(--gold-300);border-color:var(--gold-500)}
+
+/* STATUS BANNER */
+.banner{border-left:4px solid var(--status-ok);padding:16px 20px;border-radius:var(--radius-alert);background:var(--surface-card);margin-bottom:var(--tile-gap);box-shadow:var(--shadow-card)}
+.banner h2{margin:0 0 4px 0;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-secondary)}
+.banner .banner-primary{font-size:18px;font-weight:700}
+.banner .banner-detail{margin-top:4px;font-size:13px;color:var(--text-secondary)}
+.banner.status-ok{border-left-color:var(--status-ok)}.banner.status-ok .banner-primary{color:var(--status-ok)}
+.banner.status-advisory{border-left-color:var(--status-advisory);background:var(--status-advisory-bg)}.banner.status-advisory .banner-primary{color:var(--status-advisory)}
+.banner.status-alarm{border-left-color:var(--status-alarm);background:var(--status-alarm-bg)}.banner.status-alarm .banner-primary{color:var(--status-alarm)}
+.alert-item{padding:8px 12px;border-radius:6px;margin-top:8px;font-size:13px}
+.alert-item.severity-advisory{background:var(--status-advisory-bg);color:var(--status-advisory);border-left:3px solid var(--status-advisory)}
+.alert-item.severity-alarm{background:var(--status-alarm-bg);color:var(--status-alarm);border-left:3px solid var(--status-alarm)}
+.alert-item .src{font-size:10px;color:var(--text-secondary);display:block;margin-top:2px}
+
+/* CHARTS */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--tile-gap)}
+@media(max-width:1100px){.chart-grid{grid-template-columns:1fr}}
+.chart-box{background:var(--surface-card);border:1px solid var(--border-card);border-radius:var(--radius-card);padding:16px;box-shadow:var(--shadow-card)}
+.chart-box h4{margin:0 0 12px 0;font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.03em}
+.chart-canvas-wrap{position:relative;height:220px}
+
+/* TABLES & COMPONENTS */
+table.data{width:100%;border-collapse:collapse;font-size:13px}
+table.data th,table.data td{padding:8px 12px;border-bottom:1px solid var(--border-card);text-align:left}
+table.data th{font-weight:600;color:var(--text-secondary);text-transform:uppercase;font-size:11px;letter-spacing:0.03em;background:var(--gold-100)}
+table.data td.num{font-family:var(--font-data);text-align:right}
+.status-pill{display:inline-block;padding:2px 8px;border-radius:var(--radius-status);font-size:11px;font-weight:500}
+.status-pill.ok{background:var(--status-ok-bg);color:var(--status-ok)}
+.status-pill.advisory{background:var(--status-advisory-bg);color:var(--status-advisory)}
+.status-pill.alarm{background:var(--status-alarm-bg);color:var(--status-alarm)}
+
+/* SIDEBAR CONFIG */
+.config-section{padding:0 16px;margin-bottom:16px}
+.config-section h3{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.4);margin:16px 0 8px 0;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.1)}
+.config-section h3:first-child{margin-top:0}
+.form-row{display:flex;flex-direction:column;margin-bottom:8px}
+.form-row label{font-size:11px;font-weight:500;color:rgba(255,255,255,0.5);margin-bottom:3px}
+.config-input{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:6px 10px;font-size:12px;color:#FFF;width:100%;font-family:var(--font-ui)}
+.config-input:focus{outline:none;border-color:var(--gold-500);background:rgba(255,255,255,0.12)}
+.config-input option{background:var(--surface-sidebar);color:#FFF}
+
+/* UPLOAD */
+.upload-box{border:2px dashed rgba(255,255,255,0.2);border-radius:10px;padding:12px;text-align:center;cursor:pointer;transition:background 150ms;display:block;margin:0 16px}
+.upload-box:hover{background:rgba(255,255,255,0.06);border-color:var(--gold-500)}
+.upload-box input{display:none}
+.upload-box .up-title{font-weight:600;color:var(--gold-400);font-size:13px}
+.upload-box .up-sub{font-size:11px;color:rgba(255,255,255,0.4);margin-top:4px}
+
+/* BUTTONS */
+.btn{background:var(--gold-600);color:#FFF;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font-ui);transition:background 0.15s}
+.btn:hover{background:var(--gold-700)}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:6px}
+.btn-outline{background:transparent;color:var(--gold-600);border:1px solid var(--gold-600)}
+.btn-outline:hover{background:var(--gold-300)}
+.btn-sidebar{background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.15);width:calc(100% - 32px);margin:4px 16px;border-radius:8px;padding:8px;font-size:12px;cursor:pointer;font-family:var(--font-ui)}
+.btn-sidebar:hover{background:rgba(255,255,255,0.15);color:#FFF}
+
+/* ACTION BAR */
+.action-bar{display:flex;gap:8px;margin-bottom:var(--tile-gap);flex-wrap:wrap}
+
+/* SUMMARY ROW */
+.summary-row{display:flex;gap:8px;flex-wrap:wrap}
+.summary-row .stat{background:var(--gold-100);padding:6px 12px;border-radius:8px;font-size:13px}
+.summary-row .stat strong{color:var(--gold-700);font-family:var(--font-data)}
+
+/* SCHEMATIC */
+.schematic-box{text-align:center;padding:20px;background:var(--surface-card);border:1px solid var(--border-card);border-radius:var(--radius-card);margin-bottom:var(--tile-gap);box-shadow:var(--shadow-card)}
+.schematic-box svg{max-width:100%;height:auto}
+
+/* TEMP PROFILE TABLE */
+.temp-table-wrap{overflow-x:auto}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:48px;color:var(--text-secondary)}
+.empty-state h3{margin:0 0 8px 0;color:var(--text-primary);font-weight:600}
+
+/* MANUAL PANEL */
+.manual-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:100}
+.manual-panel{position:fixed;top:0;right:0;width:560px;height:100vh;background:var(--surface-card);box-shadow:-4px 0 24px rgba(0,0,0,0.12);z-index:101;display:none;flex-direction:column}
+.manual-panel.open{display:flex}
+.manual-panel-header{padding:16px 20px;border-bottom:1px solid var(--border-card);display:flex;align-items:center;justify-content:space-between}
+.manual-panel-header h3{font-size:16px;font-weight:600}
+.manual-panel-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-secondary);padding:4px 8px}
+.manual-pdf-btn{background:var(--gold-500);color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font-ui);margin-right:8px}.manual-pdf-btn:hover{background:var(--gold-600)}
+
+.manual-panel-body{flex:1;overflow-y:auto;padding:20px;font-size:14px;line-height:1.6}
+.manual-panel-body h3{margin:20px 0 8px 0;font-size:15px;font-weight:600;color:var(--gold-700)}
+.manual-panel-body h3:first-child{margin-top:0}
+.manual-panel-body p{margin-bottom:12px}
+.manual-panel-body code{background:var(--gold-100);padding:2px 6px;border-radius:4px;font-family:var(--font-data);font-size:13px}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <a class="sidebar-logo" href="welcome-home.html" title="Home"></a>
+      <span class="sidebar-title">ChemDash</span>
+    </div>
+    <div class="nav-section-label">Navigation</div>
+    <a class="nav-item" href="welcome-home.html">
+      <span class="nav-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7.5L9 2l7 5.5V15a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 012 15V7.5z"/><path d="M6.5 16.5V10h5v6.5"/></svg></span>
+      Home
+    </a>
+    <a class="nav-item active" href="#">
+      <span class="nav-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="5.5" height="5.5" rx="1"/><rect x="10.5" y="2" width="5.5" height="5.5" rx="1"/><rect x="2" y="10.5" width="5.5" height="5.5" rx="1"/><rect x="10.5" y="10.5" width="5.5" height="5.5" rx="1"/></svg></span>
+      Dashboard
+    </a>
+    <div class="sidebar-spacer"></div>
+
+    <div class="nav-section-label">Data</div>
+    <label class="upload-box" for="csvInput">
+      <input type="file" id="csvInput" accept=".csv"/>
+      <div class="up-title">Upload CSV</div>
+      <div class="up-sub" id="upStatus">No file loaded</div>
+    </label>
+    <button class="btn-sidebar" id="loadDemoBtn" style="margin-top:6px">Load demo data</button>
+
+    <div class="config-section">
+      <h3>Geometry</h3>
+      <div class="form-row"><label>Area (m2)</label><input class="config-input" type="number" id="setArea" value="250" step="1"/></div>
+      <div class="form-row"><label>Exchanger type</label><select class="config-input" id="setTEMA"><option value="0.90" selected>1-2 shell-tube (F=0.90)</option><option value="0.95">2-4 shell-tube (F=0.95)</option><option value="0.85">1-4 shell-tube (F=0.85)</option><option value="1.00">True counterflow (F=1.00)</option><option value="0.80">Crossflow (F=0.80)</option></select></div>
+      <div class="form-row"><label>LMTD F-factor</label><input class="config-input" type="number" id="setF" value="0.90" step="0.01"/></div>
+      <div class="form-row"><label>U clean (W/m2/K)</label><input class="config-input" type="number" id="setUClean" value="400" step="1"/></div>
+
+      <h3>Limits</h3>
+      <div class="form-row"><label>Rf clean trigger (1e-4)</label><input class="config-input" type="number" id="limRfClean" value="12" step="0.1"/></div>
+      <div class="form-row"><label>Approach min (C)</label><input class="config-input" type="number" id="limApproach" value="10" step="0.5"/></div>
+      <div class="form-row"><label>Shell DP max (bar)</label><input class="config-input" type="number" id="limShellDP" value="0.55" step="0.01"/></div>
+      <div class="form-row"><label>Tube DP max (bar)</label><input class="config-input" type="number" id="limTubeDP" value="0.45" step="0.01"/></div>
+    </div>
+    <button class="btn-sidebar" id="recalcBtn">Recalculate</button>
+    <div style="height:16px"></div>
+  </nav>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="breadcrumb">
+      <a href="welcome-home.html">Home</a><span>/</span>Shell & Tube Exchanger
+    </div>
+    <div class="topbar-right">
+      <div class="avatar"></div>
+    </div>
+  </header>
+
+  <!-- CONTENT -->
+  <main class="content">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px">
+      <h1 style="font-size:22px;font-weight:700">Shell & Tube Exchanger — Performance & Fouling</h1>
+      <span style="font-size:12px;color:var(--text-secondary)">TEMA · ASME PTC 12-5 · ISO 5167</span>
+    </div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:20px">Counter-current heat exchange · E-105</p>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="dashboard">Dashboard</button>
+      <button class="tab" data-tab="data">Data & Log</button>
+      <button class="tab" data-tab="about">About</button>
+    </div>
+
+    <!-- ═══ DASHBOARD TAB ═══ -->
+    <section class="tab-panel active" id="panel-dashboard">
+      <div class="action-bar">
+        <button class="btn btn-sm" id="btnExport" title="Export processed data to CSV">Export CSV</button>
+        <button class="btn btn-sm btn-outline" id="btnManual" title="View engineering manual">View Manual</button>
+      </div>
+
+      <div id="statusArea">
+        <div class="empty-state">
+          <h3>No data loaded</h3>
+          <p>Upload a CSV or click <em>Load demo data</em> in the sidebar.</p>
+        </div>
+      </div>
+
+      <div id="kpiArea" style="display:none">
+
+        <div class="kpi-row">
+          <div class="kpi-tile headline"><div class="kpi-label">Overall U (W/m2/K)</div><div class="kpi-value" id="kpiU">—</div><div class="kpi-limit">Clean baseline</div></div>
+          <div class="kpi-tile"><div class="kpi-label">Fouling Rf (1e-4)</div><div class="kpi-value" id="kpiRf">—</div><div class="kpi-limit" id="kpiRfLim">alarm >= 12.0</div></div>
+          <div class="kpi-tile"><div class="kpi-label">UA (kW/K)</div><div class="kpi-value" id="kpiUA">—</div><div class="kpi-limit">U × A × F</div></div>
+          <div class="kpi-tile"><div class="kpi-label">LMTD (C)</div><div class="kpi-value" id="kpiLMTD">—</div><div class="kpi-limit">log-mean</div></div>
+        </div>
+        <div class="kpi-row">
+          <div class="kpi-tile"><div class="kpi-label">Duty Q (kW)</div><div class="kpi-value" id="kpiQ">—</div><div class="kpi-limit">avg of streams</div></div>
+          <div class="kpi-tile"><div class="kpi-label">Q imbalance (%)</div><div class="kpi-value" id="kpiImb">—</div><div class="kpi-limit">|Qh - Qc| / avg</div></div>
+          <div class="kpi-tile"><div class="kpi-label">Hot approach (C)</div><div class="kpi-value" id="kpiHotApp">—</div><div class="kpi-limit" id="kpiHotAppLim">min 10 C</div></div>
+          <div class="kpi-tile"><div class="kpi-label">Cold approach (C)</div><div class="kpi-value" id="kpiColdApp">—</div><div class="kpi-limit" id="kpiColdAppLim">min 10 C</div></div>
+        </div>
+
+        <div class="banner status-ok" id="statusBanner">
+          <h2>Overall Status</h2>
+          <div class="banner-primary" id="statusText">OK</div>
+          <div class="banner-detail" id="statusDetail">No active alerts.</div>
+          <div id="alertList"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">Temperature Profile</div>
+          <div class="card-body temp-table-wrap">
+            <table class="data" id="tempTable">
+              <thead><tr><th>Stream</th><th class="num">Inlet (C)</th><th class="num">Outlet (C)</th><th class="num">dT (C)</th><th class="num">Flow (kg/hr)</th><th class="num">Cp (kJ/kg/K)</th><th class="num">Q (kW)</th></tr></thead>
+              <tbody>
+                <tr><td>Hot (Shell)</td><td class="num" id="hIn">—</td><td class="num" id="hOut">—</td><td class="num" id="hDT">—</td><td class="num" id="hFlow">—</td><td class="num" id="hCp">—</td><td class="num" id="hQ">—</td></tr>
+                <tr><td>Cold (Tube)</td><td class="num" id="cIn">—</td><td class="num" id="cOut">—</td><td class="num" id="cDT">—</td><td class="num" id="cFlow">—</td><td class="num" id="cCp">—</td><td class="num" id="cQ">—</td></tr>
+                <tr><td colspan="7" style="text-align:center;font-size:12px;font-weight:600;padding:12px">Shell Exit - Cold Inlet Approach</td></tr>
+                <tr><td>Approach</td><td class="num" colspan="6" id="appRow">—</td></tr>
+                <tr><td colspan="7" style="text-align:center;font-size:12px;font-weight:600;padding:12px">Pressure Drops</td></tr>
+                <tr><td>Shell DP</td><td class="num" colspan="6" id="dpShellRow">— bar</td></tr>
+                <tr><td>Tube DP</td><td class="num" colspan="6" id="dpTubeRow">— bar</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">Duty vs Design</div>
+          <div class="card-body">
+            <div style="text-align:center">
+              <canvas id="chart-duty" style="max-width:100%;height:180px"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">Trends</div>
+          <div class="card-body">
+            <div class="chart-grid">
+              <div class="chart-box"><h4>Overall U Trend (W/m2/K)</h4><div class="chart-canvas-wrap"><canvas id="chart-u"></canvas></div></div>
+              <div class="chart-box"><h4>Fouling Rf Trend (1e-4)</h4><div class="chart-canvas-wrap"><canvas id="chart-rf"></canvas></div></div>
+              <div class="chart-box"><h4>Duty Q Trend (kW)</h4><div class="chart-canvas-wrap"><canvas id="chart-q"></canvas></div></div>
+              <div class="chart-box"><h4>Approaches Trend (C)</h4><div class="chart-canvas-wrap"><canvas id="chart-app"></canvas></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ DATA TAB ═══ -->
+    <section class="tab-panel" id="panel-data">
+      <div class="card">
+        <div class="card-header">Batch summary</div>
+        <div class="card-body"><div class="summary-row" id="batchSummary"><div class="stat">No batch processed.</div></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header">Processed rows (most recent 50)</div>
+        <div class="card-body" style="overflow-x:auto">
+          <table class="data" id="resultTable">
+            <thead><tr><th>Timestamp</th><th class="num">U (W/m2/K)</th><th class="num">Rf (1e-4)</th><th class="num">Q (kW)</th><th class="num">LMTD (C)</th><th class="num">Imb %</th><th class="num">H.App (C)</th><th class="num">C.App (C)</th><th class="num">Shell DP</th><th class="num">Tube DP</th><th>Status</th></tr></thead>
+            <tbody><tr><td colspan="11" style="text-align:center;color:var(--text-secondary)">No rows processed.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ ABOUT TAB ═══ -->
+    <section class="tab-panel" id="panel-about">
+      <div class="card"><div class="card-body">
+        <h3 style="margin-top:0;font-size:15px;font-weight:600;color:var(--gold-700)">Formulas (mirrors engine.py)</h3>
+        <p><strong>Duty</strong>: Q = m × Cp × ΔT / 3600 [kW]. Computed independently for hot & cold streams; reported as average.</p>
+        <p><strong>LMTD</strong>: Log-Mean Temperature Difference for counter-current flow: LMTD = (ΔT1 − ΔT2) / ln(ΔT1 / ΔT2).</p>
+        <p><strong>Overall U</strong>: U = Q × 1000 / (A × F × LMTD) [W/m2/K]. F is LMTD correction factor (TEMA dependent, user-set).</p>
+        <p><strong>Fouling resistance</strong>: Rf = 1/U − 1/U_clean [m2K/W]. Reported as Rf × 10⁴.</p>
+        <p><strong>Q imbalance</strong>: |Q_hot − Q_cold| / avg(Q_hot, Q_cold) × 100 [%]. Energy balance check.</p>
+        <h3 style="font-size:15px;font-weight:600;color:var(--gold-700);margin-top:16px">Alert tiers</h3>
+        <p><strong>Fouling alarm</strong>: Rf >= 12.0 × 10⁻⁴ m2K/W (user-configurable). Signals fouling accumulation; consider cleaning schedule.</p>
+        <p><strong>Approach low</strong>: Either hot or cold stream approach < 10 C (user-configurable). Indicates thermal constraint or fouling.</p>
+        <p><strong>Pressure drop</strong>: Shell DP > 0.55 bar or Tube DP > 0.45 bar (user-configurable). Process or fouling-induced.</p>
+        <p><strong>Imbalance high</strong>: Q imbalance > 8%. Instrumentation error or unbalanced heat input/removal.</p>
+        <h3 style="font-size:15px;font-weight:600;color:var(--gold-700);margin-top:16px">Scope</h3>
+        <p>Reference-grade PoC. Not a control system, not instrumentation design guidance. Assumes inlet/outlet measurements are calibrated.</p>
+        <p style="font-size:12px;color:var(--text-secondary);margin-top:8px">U values are <strong>not clamped</strong>; negative or zero U signals data error.</p>
+      </div></div>
+    </section>
+  </main>
+</div>
+
+<!-- MANUAL PANEL -->
+<div class="manual-overlay" id="manualOverlay"></div>
+<div class="manual-panel" id="manualPanel">
+  <div class="manual-panel-header">
+    <h3>Engineering Manual — Shell & Tube Exchanger</h3>
+    <div style="display:flex;align-items:center;gap:4px"><button class="manual-pdf-btn" id="manualPdf">Download PDF</button><button class="manual-panel-close" id="manualClose">&times;</button></div>
+  </div>
+  <div class="manual-panel-body">
+    <h3>1. Purpose & Scope</h3>
+    <p>Shell-and-tube heat exchanger monitoring dashboard computing overall heat-transfer coefficient U and fouling resistance Rf, with energy balance and pressure-drop trending per ASME PTC 12-5 and TEMA standards.</p>
+    <h3>2. Key Standards</h3>
+    <p><strong>ASME PTC 12-5</strong> — Single-Phase Heat Exchangers. Defines U measurement, LMTD correction F-factors, and fouling-resistance protocols.</p>
+    <p><strong>TEMA</strong> — Tubular Exchanger Manufacturers Association. Classifies shell & tube types (1-2, 1-4, 2-4); each has distinct F-factor range (typically 0.75–0.95 for counter-current).</p>
+    <p><strong>ISO 5167</strong> — Flow measurement via orifice / venturi plate in ducts and pipes.</p>
+    <h3>3. Input Tags</h3>
+    <p>Timestamp, hot-stream inlet/outlet T and flow, cold-stream inlet/outlet T and flow, Cp values, shell DP, tube DP.</p>
+    <h3>4. Calculations</h3>
+    <p><code>Q_hot = m_hot × Cp_hot × (T_h_in − T_h_out) / 3600</code> [kW]</p>
+    <p><code>Q_cold = m_cold × Cp_cold × (T_c_out − T_c_in) / 3600</code> [kW]</p>
+    <p><code>Q_avg = (Q_hot + Q_cold) / 2</code></p>
+    <p><code>LMTD = (dT1 − dT2) / ln(dT1 / dT2)</code>, where dT1 = T_h_in − T_c_out, dT2 = T_h_out − T_c_in</p>
+    <p><code>U = Q_avg × 1000 / (A × F × LMTD)</code> [W/m2/K]</p>
+    <p><code>Rf = 1/U − 1/U_clean</code> [m2K/W]</p>
+    <h3>5. Alert Thresholds</h3>
+    <p>Fouling: alarm Rf >= 12.0 × 10⁻⁴. Approach: advisory < 10 C either stream. Shell DP: advisory > 0.55 bar. Tube DP: advisory > 0.45 bar. Imbalance: advisory > 8%.</p>
+    <h3>6. Assumptions</h3>
+    <p>Steady-state operation. Cp constant per stream. LMTD applicable (true counter-current, no cross-flow). F-factor user-input matches actual flow pattern.</p>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// TAG ALIASES
+// ═══════════════════════════════════════════════════════
+const TAG_ALIASES={timestamp:["timestamp","Timestamp","Date","date","Time"],hot_in_c:["hot_in_c","Hot Inlet T","T Hot In","Shell Side In","T1"],hot_out_c:["hot_out_c","Hot Outlet T","T Hot Out","Shell Side Out","T2"],hot_flow_kghr:["hot_flow_kghr","Hot Flow","Shell Flow","m_hot"],hot_cp_kjkgk:["hot_cp_kjkgk","Hot Cp","Cp Hot","cp_h"],cold_in_c:["cold_in_c","Cold Inlet T","T Cold In","Tube Side In","T3"],cold_out_c:["cold_out_c","Cold Outlet T","T Cold Out","Tube Side Out","T4"],cold_flow_kghr:["cold_flow_kghr","Cold Flow","Tube Flow","m_cold"],cold_cp_kjkgk:["cold_cp_kjkgk","Cold Cp","Cp Cold","cp_c"],shell_dp_bar:["shell_dp_bar","Shell DP","Shell dP","DPs"],tube_dp_bar:["tube_dp_bar","Tube DP","Tube dP","DPt"]};
+
+function lookup(row,canonical){const aliases=TAG_ALIASES[canonical]||[canonical];for(const a of aliases){if(row[a]!==undefined&&row[a]!==null&&String(row[a]).trim()!=="")return row[a];}return null;}
+function num(v){if(v===null||v===undefined||v==="")return NaN;if(typeof v==="number")return v;const n=parseFloat(String(v).replace(/,/g,"").trim());return isNaN(n)?NaN:n;}
+function parseTs(v){if(!v)return null;const s=String(v).trim();const m=s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?$/);if(m)return new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+(m[6]||0));const m2=s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{2,4})\s+(\d{1,2}):(\d{2})$/);if(m2){let y=+m2[3];if(y<100)y+=2000;return new Date(y,+m2[1]-1,+m2[2],+m2[4],+m2[5]);}const d=new Date(s);return isNaN(d.getTime())?null:d;}
+
+// ═══════════════════════════════════════════════════════
+// CORE MATH
+// ═══════════════════════════════════════════════════════
+function duty(m,cp,dT){return m*cp*Math.abs(dT)/3600;}
+function lmtd(thi,tho,tci,tco){const dt1=thi-tco,dt2=tho-tci;if(dt1<=0||dt2<=0)return NaN;if(Math.abs(dt1-dt2)<1e-6)return dt1;return(dt1-dt2)/Math.log(dt1/dt2);}
+function overallU(qkw,A,F,lm){if(A<=0||lm<=0||qkw<=0)return NaN;return qkw*1000/(A*F*lm);}
+function rfouling(u,uc){if(u<=0||uc<=0)return NaN;return 1/u-1/uc;}
+function buildAlerts(u,rf,rfLim,hotApp,coldApp,appLim,shellDp,tubeDp,dpShellLim,dpTubeLim,imb){const a=[];if(!isNaN(rf)&&rf>=rfLim)a.push({severity:"alarm",message:`Fouling Rf ${(rf*1e4).toFixed(2)}×10⁻⁴ m²K/W exceeds threshold ${(rfLim*1e4).toFixed(1)}×10⁻⁴. Consider cleaning.`,source:"fouling protocol"});if(!isNaN(hotApp)&&hotApp<appLim)a.push({severity:"advisory",message:`Hot stream approach ${hotApp.toFixed(1)} C below minimum ${appLim} C.`,source:"design check"});if(!isNaN(coldApp)&&coldApp<appLim)a.push({severity:"advisory",message:`Cold stream approach ${coldApp.toFixed(1)} C below minimum ${appLim} C.`,source:"design check"});if(!isNaN(shellDp)&&shellDp>dpShellLim)a.push({severity:"advisory",message:`Shell DP ${shellDp.toFixed(3)} bar exceeds ${dpShellLim} bar.`,source:"pressure drop"});if(!isNaN(tubeDp)&&tubeDp>dpTubeLim)a.push({severity:"advisory",message:`Tube DP ${tubeDp.toFixed(3)} bar exceeds ${dpTubeLim} bar.`,source:"pressure drop"});if(!isNaN(imb)&&imb>8)a.push({severity:"advisory",message:`Duty imbalance ${imb.toFixed(1)}% exceeds 8%. Check mass/energy balance.`,source:"energy balance"});return a;}
+function rollUp(alerts){if(alerts.some(x=>x.severity==="alarm"))return"alarm";if(alerts.some(x=>x.severity==="advisory"))return"advisory";return"ok";}
+
+// ═══════════════════════════════════════════════════════
+// ROW & BATCH PROCESSOR
+// ═══════════════════════════════════════════════════════
+function processRow(row,s,lim){const ts=parseTs(lookup(row,"timestamp"));if(!ts)return{drop:true,reason:"bad timestamp"};const thi=num(lookup(row,"hot_in_c")),tho=num(lookup(row,"hot_out_c")),mh=num(lookup(row,"hot_flow_kghr")),cph=num(lookup(row,"hot_cp_kjkgk"));const tci=num(lookup(row,"cold_in_c")),tco=num(lookup(row,"cold_out_c")),mc=num(lookup(row,"cold_flow_kghr")),cpc=num(lookup(row,"cold_cp_kjkgk"));const sdp=num(lookup(row,"shell_dp_bar")),tdp=num(lookup(row,"tube_dp_bar"));if(isNaN(thi)||isNaN(tho)||isNaN(mh)||isNaN(cph)||isNaN(tci)||isNaN(tco)||isNaN(mc)||isNaN(cpc))return{drop:true,reason:"missing critical tag"};const Qh=duty(mh,cph,thi-tho),Qc=duty(mc,cpc,tco-tci);const Qavg=(Qh+Qc)/2;if(Qavg<=0)return{drop:true,reason:"no net duty"};const imb=Math.abs(Qh-Qc)/Qavg*100;const lm=lmtd(thi,tho,tci,tco);if(isNaN(lm)||lm<=0)return{drop:true,reason:"bad LMTD"};const U=overallU(Qavg,s.A,s.F,lm);const Rf=rfouling(U,s.Uc);const UA=U*s.A*s.F/1000;const hotApp=thi-tco,coldApp=tho-tci;const rfVal=isNaN(Rf)?NaN:Rf;const rfValE4=isNaN(rfVal)?NaN:rfVal*1e4;const alerts=buildAlerts(U,rfVal,lim.rfClean,hotApp,coldApp,lim.approach,sdp,tdp,lim.shellDp,lim.tubeDp,imb);const status=rollUp(alerts);return{drop:false,timestamp:ts,thi,tho,tci,tco,mh,mc,cph,cpc,Qh,Qc,Qavg,imb,lm,U,Rf:rfVal,rfE4:rfValE4,UA,hotApp,coldApp,sdp,tdp,alerts,status};}
+function processBatch(rows,s,lim){const parsed=[];for(const r of rows){const ts=parseTs(lookup(r,"timestamp"));if(ts)parsed.push([ts,r]);}parsed.sort((a,b)=>a[0]-b[0]);const out=[];let dropped=0;const reasons={};for(const[ts,r]of parsed){const res=processRow(r,s,lim);if(res.drop){dropped++;reasons[res.reason]=(reasons[res.reason]||0)+1;}else out.push(res);}return{processed:out,dropped,reasons};}
+
+// ═══════════════════════════════════════════════════════
+// UI
+// ═══════════════════════════════════════════════════════
+let currentRows=[];let currentBatch=null;const charts={};
+function readSettings(){return{A:+document.getElementById("setArea").value,F:+document.getElementById("setF").value,Uc:+document.getElementById("setUClean").value,tema:document.getElementById("setTEMA").value};}
+function readLimits(){return{rfClean:+document.getElementById("limRfClean").value*1e-4,approach:+document.getElementById("limApproach").value,shellDp:+document.getElementById("limShellDP").value,tubeDp:+document.getElementById("limTubeDP").value};}
+function fmt(v,d){return(v===null||v===undefined||isNaN(v))?"—":(+v).toFixed(d);}
+
+function renderResult(res,lim){document.getElementById("statusArea").style.display="none";document.getElementById("kpiArea").style.display="block";document.getElementById("kpiU").textContent=fmt(res.U,0);document.getElementById("kpiRf").textContent=fmt(res.rfE4,2);document.getElementById("kpiRfLim").textContent=`alarm >= ${(lim.rfClean*1e4).toFixed(1)}`;document.getElementById("kpiUA").textContent=fmt(res.UA,2);document.getElementById("kpiLMTD").textContent=fmt(res.lm,2);document.getElementById("kpiQ").textContent=fmt(res.Qavg,1);document.getElementById("kpiImb").textContent=fmt(res.imb,1);document.getElementById("kpiHotApp").textContent=fmt(res.hotApp,2);document.getElementById("kpiColdApp").textContent=fmt(res.coldApp,2);document.getElementById("kpiHotAppLim").textContent=`min ${lim.approach} C`;document.getElementById("kpiColdAppLim").textContent=`min ${lim.approach} C`;document.getElementById("hIn").textContent=fmt(res.thi,1);document.getElementById("hOut").textContent=fmt(res.tho,1);document.getElementById("hDT").textContent=fmt(res.thi-res.tho,1);document.getElementById("hFlow").textContent=fmt(res.mh,0);document.getElementById("hCp").textContent=fmt(res.cph,3);document.getElementById("hQ").textContent=fmt(res.Qh,1);document.getElementById("cIn").textContent=fmt(res.tci,1);document.getElementById("cOut").textContent=fmt(res.tco,1);document.getElementById("cDT").textContent=fmt(res.tco-res.tci,1);document.getElementById("cFlow").textContent=fmt(res.mc,0);document.getElementById("cCp").textContent=fmt(res.cpc,3);document.getElementById("cQ").textContent=fmt(res.Qc,1);document.getElementById("appRow").textContent=fmt(res.hotApp,2)+" C (hot) / "+fmt(res.coldApp,2)+" C (cold)";document.getElementById("dpShellRow").textContent=fmt(res.sdp,3)+" bar";document.getElementById("dpTubeRow").textContent=fmt(res.tdp,3)+" bar";const banner=document.getElementById("statusBanner");banner.className="banner status-"+res.status;document.getElementById("statusText").textContent=res.status.toUpperCase();document.getElementById("statusDetail").textContent=res.alerts.length?`${res.alerts.length} active alert(s)`:"No active alerts.";document.getElementById("alertList").innerHTML=res.alerts.map(al=>`<div class="alert-item severity-${al.severity}"><strong>[${al.severity.toUpperCase()}]</strong> ${al.message}<span class="src">Source: ${al.source}</span></div>`).join("");}
+
+function mkChart(id,labels,datasets,dualY){if(charts[id]){charts[id].destroy();}const ctx=document.getElementById("chart-"+id).getContext("2d");const opts={responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{position:"bottom",labels:{font:{size:11,family:"IBM Plex Sans"},boxWidth:12}}},scales:{x:{ticks:{maxTicksLimit:6,font:{size:10,family:"IBM Plex Sans"}}},y:{ticks:{font:{size:10,family:"IBM Plex Mono"}}}},elements:{point:{radius:0},line:{borderWidth:1.5,tension:0.1}}};if(dualY)opts.scales.y1={position:"right",grid:{drawOnChartArea:false},ticks:{font:{size:10,family:"IBM Plex Mono"}}};charts[id]=new Chart(ctx,{type:"line",data:{labels,datasets},options:opts});}
+
+function mkDutyChart(res){if(charts.duty){charts.duty.destroy();}const ctx=document.getElementById("chart-duty").getContext("2d");const data=[res.Qh,res.Qc,res.Qavg];const colors=["#D4432A","#3A7D52","#BB6E3D"];const labels=["Hot","Cold","Avg"];const opts={type:"bar",data:{labels,datasets:[{label:"Duty (kW)",data,backgroundColor:colors,borderColor:colors,borderWidth:1.5}]},options:{indexAxis:"y",responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{display:false}},scales:{x:{ticks:{font:{size:10,family:"IBM Plex Mono"}}}}}};charts.duty=new Chart(ctx,opts);}
+
+function renderBatch(batch){const sumEl=document.getElementById("batchSummary");const tbody=document.getElementById("resultTable").querySelector("tbody");if(!batch||!batch.processed.length){sumEl.innerHTML='<div class="stat">No rows processed.</div>';tbody.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--text-secondary)">No rows.</td></tr>';return;}const reasons=Object.entries(batch.reasons).map(([k,v])=>`${k}: ${v}`).join("; ")||"none";const sc=batch.processed.reduce((acc,r)=>{acc[r.status]=(acc[r.status]||0)+1;return acc;},{});sumEl.innerHTML=`<div class="stat">Processed: <strong>${batch.processed.length}</strong></div><div class="stat">Dropped: <strong>${batch.dropped}</strong></div><div class="stat">Drop reasons: ${reasons}</div><div class="stat">OK: <strong>${sc.ok||0}</strong></div><div class="stat">Advisory: <strong>${sc.advisory||0}</strong></div>`;const rows=batch.processed.slice(-50).reverse();tbody.innerHTML=rows.map(r=>{const ts=r.timestamp;const tsStr=`${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,"0")}-${String(ts.getDate()).padStart(2,"0")} ${String(ts.getHours()).padStart(2,"0")}:${String(ts.getMinutes()).padStart(2,"0")}`;return`<tr><td>${tsStr}</td><td class="num">${fmt(r.U,0)}</td><td class="num">${fmt(r.rfE4,2)}</td><td class="num">${fmt(r.Qavg,1)}</td><td class="num">${fmt(r.lm,2)}</td><td class="num">${fmt(r.imb,1)}</td><td class="num">${fmt(r.hotApp,2)}</td><td class="num">${fmt(r.coldApp,2)}</td><td class="num">${fmt(r.sdp,3)}</td><td class="num">${fmt(r.tdp,3)}</td><td><span class="status-pill ${r.status}">${r.status}</span></td></tr>`;}).join("");if(batch.processed.length<2)return;const stride=Math.max(1,Math.floor(batch.processed.length/200));const sample=batch.processed.filter((_,i)=>i%stride===0);const labels=sample.map(r=>{const d=r.timestamp;return`${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;});mkChart("u",labels,[{label:"U (W/m²/K)",data:sample.map(r=>r.U),borderColor:"#BB6E3D",backgroundColor:"transparent"}],false);mkChart("rf",labels,[{label:"Rf (×10⁻⁴ m²K/W)",data:sample.map(r=>r.rfE4),borderColor:"#D4432A",backgroundColor:"transparent"}],false);mkChart("q",labels,[{label:"Duty Qavg (kW)",data:sample.map(r=>r.Qavg),borderColor:"#3A7D52",backgroundColor:"transparent"}],false);mkChart("app",labels,[{label:"Hot approach (C)",data:sample.map(r=>r.hotApp),borderColor:"#D4432A",backgroundColor:"transparent",yAxisID:"y"},{label:"Cold approach (C)",data:sample.map(r=>r.coldApp),borderColor:"#3A7D52",backgroundColor:"transparent",yAxisID:"y1"}],true);}
+
+function runProcess(){if(!currentRows.length)return;const s=readSettings(),l=readLimits();currentBatch=processBatch(currentRows,s,l);if(currentBatch.processed.length){const res=currentBatch.processed[currentBatch.processed.length-1];renderResult(res,l);mkDutyChart(res);}else{document.getElementById("statusArea").style.display="block";document.getElementById("kpiArea").style.display="none";document.getElementById("statusArea").innerHTML='<div class="empty-state"><h3>All rows dropped</h3><p>Check Data & Log tab for drop reasons.</p></div>';}renderBatch(currentBatch);}
+
+// Demo data (28 rows, heat exchanger duty trending)
+const DEMO_SERIES=[{"Timestamp":"2026-02-01 00:00","Hot Inlet T":"179.2","Hot Outlet T":"108.0","Hot Flow":"100418","Hot Cp":"2.400","Cold Inlet T":"39.7","Cold Outlet T":"100.1","Cold Flow":"114100","Cold Cp":"2.500","Shell DP":"0.342","Tube DP":"0.278"},{"Timestamp":"2026-02-01 06:00","Hot Inlet T":"180.2","Hot Outlet T":"111.0","Hot Flow":"100444","Hot Cp":"2.400","Cold Inlet T":"40.8","Cold Outlet T":"99.7","Cold Flow":"113685","Cold Cp":"2.500","Shell DP":"0.355","Tube DP":"0.282"},{"Timestamp":"2026-02-01 12:00","Hot Inlet T":"180.7","Hot Outlet T":"109.5","Hot Flow":"99861","Hot Cp":"2.400","Cold Inlet T":"39.7","Cold Outlet T":"98.4","Cold Flow":"116503","Cold Cp":"2.500","Shell DP":"0.361","Tube DP":"0.278"},{"Timestamp":"2026-02-01 18:00","Hot Inlet T":"180.6","Hot Outlet T":"110.1","Hot Flow":"99187","Hot Cp":"2.400","Cold Inlet T":"39.0","Cold Outlet T":"96.6","Cold Flow":"116439","Cold Cp":"2.500","Shell DP":"0.348","Tube DP":"0.292"},{"Timestamp":"2026-02-02 00:00","Hot Inlet T":"180.3","Hot Outlet T":"110.0","Hot Flow":"100167","Hot Cp":"2.400","Cold Inlet T":"39.8","Cold Outlet T":"99.4","Cold Flow":"113619","Cold Cp":"2.500","Shell DP":"0.362","Tube DP":"0.275"},{"Timestamp":"2026-02-02 06:00","Hot Inlet T":"179.7","Hot Outlet T":"112.9","Hot Flow":"100951","Hot Cp":"2.400","Cold Inlet T":"41.0","Cold Outlet T":"96.6","Cold Flow":"115654","Cold Cp":"2.500","Shell DP":"0.360","Tube DP":"0.281"},{"Timestamp":"2026-02-02 12:00","Hot Inlet T":"180.4","Hot Outlet T":"111.1","Hot Flow":"98574","Hot Cp":"2.400","Cold Inlet T":"40.5","Cold Outlet T":"98.2","Cold Flow":"114329","Cold Cp":"2.500","Shell DP":"0.356","Tube DP":"0.292"},{"Timestamp":"2026-02-02 18:00","Hot Inlet T":"180.6","Hot Outlet T":"112.2","Hot Flow":"99442","Hot Cp":"2.400","Cold Inlet T":"39.3","Cold Outlet T":"95.5","Cold Flow":"115879","Cold Cp":"2.500","Shell DP":"0.358","Tube DP":"0.280"},{"Timestamp":"2026-02-03 00:00","Hot Inlet T":"180.7","Hot Outlet T":"113.1","Hot Flow":"99028","Hot Cp":"2.400","Cold Inlet T":"39.5","Cold Outlet T":"95.5","Cold Flow":"115072","Cold Cp":"2.500","Shell DP":"0.370","Tube DP":"0.292"},{"Timestamp":"2026-02-03 06:00","Hot Inlet T":"180.4","Hot Outlet T":"114.2","Hot Flow":"99757","Hot Cp":"2.400","Cold Inlet T":"40.6","Cold Outlet T":"95.5","Cold Flow":"115185","Cold Cp":"2.500","Shell DP":"0.357","Tube DP":"0.286"},{"Timestamp":"2026-02-03 12:00","Hot Inlet T":"180.7","Hot Outlet T":"115.0","Hot Flow":"100958","Hot Cp":"2.400","Cold Inlet T":"39.4","Cold Outlet T":"96.0","Cold Flow":"113432","Cold Cp":"2.500","Shell DP":"0.366","Tube DP":"0.295"},{"Timestamp":"2026-02-03 18:00","Hot Inlet T":"180.6","Hot Outlet T":"115.2","Hot Flow":"99521","Hot Cp":"2.400","Cold Inlet T":"39.2","Cold Outlet T":"93.2","Cold Flow":"115805","Cold Cp":"2.500","Shell DP":"0.374","Tube DP":"0.292"},{"Timestamp":"2026-02-04 00:00","Hot Inlet T":"179.9","Hot Outlet T":"113.5","Hot Flow":"99908","Hot Cp":"2.400","Cold Inlet T":"39.5","Cold Outlet T":"95.6","Cold Flow":"113737","Cold Cp":"2.500","Shell DP":"0.370","Tube DP":"0.284"},{"Timestamp":"2026-02-04 06:00","Hot Inlet T":"179.3","Hot Outlet T":"115.2","Hot Flow":"100980","Hot Cp":"2.400","Cold Inlet T":"40.3","Cold Outlet T":"94.9","Cold Flow":"113664","Cold Cp":"2.500","Shell DP":"0.366","Tube DP":"0.298"},{"Timestamp":"2026-02-04 12:00","Hot Inlet T":"179.9","Hot Outlet T":"115.3","Hot Flow":"100128","Hot Cp":"2.400","Cold Inlet T":"39.8","Cold Outlet T":"94.6","Cold Flow":"113750","Cold Cp":"2.500","Shell DP":"0.369","Tube DP":"0.296"},{"Timestamp":"2026-02-04 18:00","Hot Inlet T":"179.7","Hot Outlet T":"115.6","Hot Flow":"99866","Hot Cp":"2.400","Cold Inlet T":"39.7","Cold Outlet T":"93.8","Cold Flow":"113755","Cold Cp":"2.500","Shell DP":"0.368","Tube DP":"0.301"},{"Timestamp":"2026-02-05 00:00","Hot Inlet T":"180.5","Hot Outlet T":"116.9","Hot Flow":"98638","Hot Cp":"2.400","Cold Inlet T":"39.8","Cold Outlet T":"92.6","Cold Flow":"114173","Cold Cp":"2.500","Shell DP":"0.385","Tube DP":"0.291"},{"Timestamp":"2026-02-05 06:00","Hot Inlet T":"180.4","Hot Outlet T":"117.8","Hot Flow":"100533","Hot Cp":"2.400","Cold Inlet T":"40.9","Cold Outlet T":"93.4","Cold Flow":"115637","Cold Cp":"2.500","Shell DP":"0.377","Tube DP":"0.297"},{"Timestamp":"2026-02-05 12:00","Hot Inlet T":"180.7","Hot Outlet T":"119.3","Hot Flow":"100972","Hot Cp":"2.400","Cold Inlet T":"39.9","Cold Outlet T":"92.1","Cold Flow":"114209","Cold Cp":"2.500","Shell DP":"0.382","Tube DP":"0.291"},{"Timestamp":"2026-02-05 18:00","Hot Inlet T":"180.6","Hot Outlet T":"117.5","Hot Flow":"98509","Hot Cp":"2.400","Cold Inlet T":"39.1","Cold Outlet T":"91.5","Cold Flow":"113579","Cold Cp":"2.500","Shell DP":"0.375","Tube DP":"0.291"},{"Timestamp":"2026-02-06 00:00","Hot Inlet T":"179.6","Hot Outlet T":"118.0","Hot Flow":"99855","Hot Cp":"2.400","Cold Inlet T":"39.9","Cold Outlet T":"91.3","Cold Flow":"114356","Cold Cp":"2.500","Shell DP":"0.389","Tube DP":"0.299"},{"Timestamp":"2026-02-06 06:00","Hot Inlet T":"180.1","Hot Outlet T":"118.9","Hot Flow":"101110","Hot Cp":"2.400","Cold Inlet T":"40.1","Cold Outlet T":"91.8","Cold Flow":"114603","Cold Cp":"2.500","Shell DP":"0.382","Tube DP":"0.301"},{"Timestamp":"2026-02-06 12:00","Hot Inlet T":"180.1","Hot Outlet T":"119.7","Hot Flow":"100227","Hot Cp":"2.400","Cold Inlet T":"39.9","Cold Outlet T":"89.7","Cold Flow":"115838","Cold Cp":"2.500","Shell DP":"0.396","Tube DP":"0.306"},{"Timestamp":"2026-02-06 18:00","Hot Inlet T":"179.9","Hot Outlet T":"120.5","Hot Flow":"99431","Hot Cp":"2.400","Cold Inlet T":"39.9","Cold Outlet T":"90.4","Cold Flow":"113228","Cold Cp":"2.500","Shell DP":"0.394","Tube DP":"0.305"},{"Timestamp":"2026-02-07 00:00","Hot Inlet T":"179.7","Hot Outlet T":"120.2","Hot Flow":"101314","Hot Cp":"2.400","Cold Inlet T":"40.3","Cold Outlet T":"91.2","Cold Flow":"114507","Cold Cp":"2.500","Shell DP":"0.398","Tube DP":"0.310"},{"Timestamp":"2026-02-07 06:00","Hot Inlet T":"180.0","Hot Outlet T":"119.8","Hot Flow":"99646","Hot Cp":"2.400","Cold Inlet T":"40.9","Cold Outlet T":"89.9","Cold Flow":"116865","Cold Cp":"2.500","Shell DP":"0.398","Tube DP":"0.314"},{"Timestamp":"2026-02-07 12:00","Hot Inlet T":"179.4","Hot Outlet T":"121.4","Hot Flow":"99871","Hot Cp":"2.400","Cold Inlet T":"40.1","Cold Outlet T":"87.6","Cold Flow":"116621","Cold Cp":"2.500","Shell DP":"0.390","Tube DP":"0.307"},{"Timestamp":"2026-02-07 18:00","Hot Inlet T":"179.5","Hot Outlet T":"120.6","Hot Flow":"100760","Hot Cp":"2.400","Cold Inlet T":"39.8","Cold Outlet T":"89.3","Cold Flow":"114428","Cold Cp":"2.500","Shell DP":"0.396","Tube DP":"0.317"}];
+
+// ═══════════════════════════════════════════════════════
+// WIRING
+// ═══════════════════════════════════════════════════════
+
+// Tabs
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".tab-panel").forEach(x=>x.classList.remove("active"));t.classList.add("active");document.getElementById("panel-"+t.dataset.tab).classList.add("active");}));
+
+// CSV upload
+document.getElementById("csvInput").addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;document.getElementById("upStatus").textContent="Parsing...";Papa.parse(f,{header:true,skipEmptyLines:true,complete:r=>{currentRows=r.data;document.getElementById("upStatus").textContent=f.name+" · "+currentRows.length+" rows";runProcess();}});});
+
+// Demo button
+document.getElementById("loadDemoBtn").addEventListener("click",()=>{currentRows=DEMO_SERIES;document.getElementById("upStatus").textContent="Demo loaded · "+DEMO_SERIES.length+" rows";runProcess();});
+
+// Recalculate
+document.getElementById("recalcBtn").addEventListener("click",runProcess);
+document.querySelectorAll(".config-input").forEach(inp=>inp.addEventListener("change",runProcess));
+
+// Export
+document.getElementById("btnExport").addEventListener("click",()=>{if(!currentBatch||!currentBatch.processed.length)return;const hdrs=["Timestamp","U_W/m2K","Rf_1e-4","Q_kW","LMTD_C","Imb_%","HotApp_C","ColdApp_C","ShellDP_bar","TubeDP_bar","Status"];const rows=currentBatch.processed.map(r=>{const ts=r.timestamp;return[`${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,"0")}-${String(ts.getDate()).padStart(2,"0")} ${String(ts.getHours()).padStart(2,"0")}:${String(ts.getMinutes()).padStart(2,"0")}`,fmt(r.U,0),fmt(r.rfE4,2),fmt(r.Qavg,1),fmt(r.lm,2),fmt(r.imb,1),fmt(r.hotApp,2),fmt(r.coldApp,2),fmt(r.sdp,3),fmt(r.tdp,3),r.status].join(",");});const csv=hdrs.join(",")+"\n"+rows.join("\n");const blob=new Blob([csv],{type:"text/csv"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="shell-tube-exchanger-export.csv";a.click();});
+
+// Manual panel
+document.getElementById("btnManual").addEventListener("click",()=>{document.getElementById("manualPanel").classList.add("open");document.getElementById("manualOverlay").style.display="block";});
+document.getElementById("manualClose").addEventListener("click",()=>{document.getElementById("manualPanel").classList.remove("open");document.getElementById("manualOverlay").style.display="none";});
+document.getElementById("manualOverlay").addEventListener("click",()=>{document.getElementById("manualPanel").classList.remove("open");document.getElementById("manualOverlay").style.display="none";});
+
+// Auto-load demo
+currentRows=DEMO_SERIES;document.getElementById("upStatus").textContent="Demo auto-loaded · "+DEMO_SERIES.length+" rows";runProcess();
+
+document.getElementById("manualPdf").addEventListener("click",function(){
+  var body=document.querySelector(".manual-panel-body").innerHTML;
+  var win=window.open("","_blank");
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Engineering Manual — Shell & Tube Exchanger</title>'+
+    '<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">'+
+    '<style>body{font-family:\'IBM Plex Sans\',-apple-system,sans-serif;font-size:13px;line-height:1.7;color:#32302F;max-width:700px;margin:40px auto;padding:0 24px}'+
+    'h1{font-size:20px;font-weight:700;color:#463B33;border-bottom:2px solid #E29C57;padding-bottom:8px;margin-bottom:24px}'+
+    'h3{font-size:14px;font-weight:600;color:#763D16;margin:20px 0 8px}'+
+    'p{margin-bottom:10px}'+
+    'code{background:#F7F6F2;padding:2px 6px;border-radius:4px;font-family:\'IBM Plex Mono\',monospace;font-size:12px}'+
+    'strong{color:#463B33}'+
+    '@media print{body{margin:20px}@page{margin:1.5cm}}</style></head><body>'+
+    '<h1>Engineering Manual — Shell & Tube Exchanger</h1>'+body+'</body></html>');
+  win.document.close();
+  setTimeout(function(){win.print();},400);
+});
+</script>
+</body>
+</html>

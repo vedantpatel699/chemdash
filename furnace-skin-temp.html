@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChemDash — Furnace Tube Skin Temperature</title>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --gold-800:#463B33;--gold-700:#763D16;--gold-600:#BB6E3D;--gold-500:#E29C57;
+  --gold-400:#F9A471;--gold-300:#FCEEE5;--gold-200:#E9E3DE;--gold-100:#F7F6F2;
+  --text-primary:#32302F;--text-secondary:#615E5C;
+  --status-ok:#3A7D52;--status-ok-bg:#E5F0E8;
+  --status-advisory:#C4890E;--status-advisory-bg:#FAF0E0;
+  --status-alarm:#D4432A;--status-alarm-bg:#FCEBEB;
+  --status-trip:#7a1d14;--status-trip-bg:#f5d5d1;
+  --status-watch:#763D16;--status-watch-bg:#FCEEE5;
+  --surface-page:#F7F6F2;--surface-card:#FFFFFF;--surface-sidebar:#463B33;
+  --border-card:#E9E3DE;
+  --shadow-card:0 1px 7px rgba(0,0,0,0.05),0 0 16px rgba(0,0,0,0.05);
+  --shadow-sidebar:2px 0 8px rgba(0,0,0,0.06);
+  --shadow-topbar:0 2px 6px rgba(0,0,0,0.04);
+  --radius-card:16px;--radius-status:12px;--radius-alert:10px;--radius-nav:8px;
+  --sidebar-width:180px;--topbar-height:56px;--content-margin:24px;--tile-gap:16px;
+  --font-ui:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,sans-serif;
+  --font-data:'IBM Plex Mono','SF Mono','Consolas',monospace;
+}
+body{font-family:var(--font-ui);background:var(--surface-page);color:var(--text-primary);overflow:hidden;height:100vh}
+
+/* SHELL */
+.shell{display:grid;grid-template-columns:var(--sidebar-width) 1fr;grid-template-rows:var(--topbar-height) 1fr;height:100vh}
+
+/* SIDEBAR */
+.sidebar{grid-row:1/-1;background:var(--surface-sidebar);box-shadow:var(--shadow-sidebar);display:flex;flex-direction:column;padding-top:16px;z-index:10}
+.sidebar-header{display:flex;align-items:center;gap:10px;padding:0 16px;margin-bottom:32px}
+.sidebar-logo{width:36px;height:36px;border-radius:50%;background:var(--gold-500);flex-shrink:0;text-decoration:none}
+.sidebar-title{font-size:15px;font-weight:600;color:#FFF;letter-spacing:0.3px}
+.nav-section-label{font-size:10px;font-weight:500;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1.2px;padding:0 16px;margin-bottom:8px;margin-top:8px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 16px;border-radius:var(--radius-nav);margin:0 8px 2px 8px;cursor:pointer;transition:background 0.15s;text-decoration:none;color:rgba(255,255,255,0.6);font-size:13px;font-weight:500}
+.nav-item:hover{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.85)}
+.nav-item.active{background:rgba(255,255,255,0.12);color:#FFF}
+.nav-icon{width:18px;height:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.nav-icon svg{width:18px;height:18px}
+.sidebar-spacer{flex:1}
+
+/* TOPBAR */
+.topbar{background:var(--surface-card);box-shadow:var(--shadow-topbar);display:flex;align-items:center;padding:0 var(--content-margin);justify-content:space-between;z-index:5}
+.breadcrumb{font-size:13px;color:var(--text-secondary)}
+.breadcrumb a{color:var(--text-secondary);text-decoration:none}
+.breadcrumb a:hover{color:var(--gold-600)}
+.breadcrumb span{margin:0 6px;opacity:0.4}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--gold-600)}
+
+/* CONTENT */
+.content{padding:var(--content-margin);overflow-y:auto}
+
+/* TABS */
+.tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border-card)}
+.tab{padding:10px 16px;font-size:13px;font-weight:500;color:var(--text-secondary);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:color 0.15s}
+.tab:hover{color:var(--text-primary)}
+.tab.active{color:var(--gold-700);border-bottom-color:var(--gold-600)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* CARDS */
+.card{background:var(--surface-card);border:1px solid var(--border-card);border-radius:var(--radius-card);box-shadow:var(--shadow-card);margin-bottom:var(--tile-gap)}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--border-card);font-weight:600;font-size:14px;display:flex;align-items:center;justify-content:space-between}
+.card-body{padding:20px}
+
+/* KPI */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:var(--tile-gap)}
+.kpi-tile{background:var(--surface-card);border:1px solid var(--border-card);border-radius:var(--radius-card);padding:12px 16px;transition:border-color 0.15s}
+.kpi-tile:hover{border-color:var(--gold-500)}
+.kpi-tile .kpi-label{font-size:11px;font-weight:500;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.03em}
+.kpi-tile .kpi-value{font-family:var(--font-data);font-size:20px;font-weight:500;margin-top:4px}
+.kpi-tile .kpi-limit{font-size:10px;color:var(--text-secondary);margin-top:2px}
+.kpi-tile.headline{background:var(--gold-300);border-color:var(--gold-500)}
+
+/* STATUS BANNER */
+.banner{border-left:4px solid var(--status-ok);padding:16px 20px;border-radius:var(--radius-alert);background:var(--surface-card);margin-bottom:var(--tile-gap);box-shadow:var(--shadow-card)}
+.banner h2{margin:0 0 4px 0;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-secondary)}
+.banner .banner-primary{font-size:18px;font-weight:700}
+.banner .banner-detail{margin-top:4px;font-size:13px;color:var(--text-secondary)}
+.banner.status-ok{border-left-color:var(--status-ok)}.banner.status-ok .banner-primary{color:var(--status-ok)}
+.banner.status-watch{border-left-color:var(--status-watch);background:var(--status-watch-bg)}.banner.status-watch .banner-primary{color:var(--status-watch)}
+.banner.status-advisory{border-left-color:var(--status-advisory);background:var(--status-advisory-bg)}.banner.status-advisory .banner-primary{color:var(--status-advisory)}
+.banner.status-alarm{border-left-color:var(--status-alarm);background:var(--status-alarm-bg)}.banner.status-alarm .banner-primary{color:var(--status-alarm)}
+.banner.status-trip{border-left-color:var(--status-trip);background:var(--status-trip-bg)}.banner.status-trip .banner-primary{color:var(--status-trip)}
+.alert-item{padding:8px 12px;border-radius:6px;margin-top:8px;font-size:13px}
+.alert-item.severity-watch{background:var(--status-watch-bg);color:var(--status-watch);border-left:3px solid var(--status-watch)}
+.alert-item.severity-advisory{background:var(--status-advisory-bg);color:var(--status-advisory);border-left:3px solid var(--status-advisory)}
+.alert-item.severity-alarm{background:var(--status-alarm-bg);color:var(--status-alarm);border-left:3px solid var(--status-alarm)}
+.alert-item.severity-trip{background:var(--status-trip-bg);color:var(--status-trip);border-left:3px solid var(--status-trip)}
+.alert-item .src{font-size:10px;color:var(--text-secondary);display:block;margin-top:2px}
+
+/* CHARTS */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--tile-gap)}
+@media(max-width:1100px){.chart-grid{grid-template-columns:1fr}}
+.chart-box{background:var(--surface-card);border:1px solid var(--border-card);border-radius:var(--radius-card);padding:16px;box-shadow:var(--shadow-card)}
+.chart-box h4{margin:0 0 12px 0;font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.03em}
+.chart-canvas-wrap{position:relative;height:220px}
+
+/* SCHEMATIC */
+.schematic-box{background:var(--surface-card);border:1px solid var(--border-card);border-radius:var(--radius-card);padding:20px;box-shadow:var(--shadow-card);margin-bottom:var(--tile-gap);text-align:center}
+.schematic-box h4{margin:0 0 12px 0;font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.03em}
+
+/* TABLE */
+table.data{width:100%;border-collapse:collapse;font-size:13px}
+table.data th,table.data td{padding:8px 12px;border-bottom:1px solid var(--border-card);text-align:left}
+table.data th{font-weight:600;color:var(--text-secondary);text-transform:uppercase;font-size:11px;letter-spacing:0.03em;background:var(--gold-100)}
+table.data td.num{font-family:var(--font-data);text-align:right}
+.status-pill{display:inline-block;padding:2px 8px;border-radius:var(--radius-status);font-size:11px;font-weight:500}
+.status-pill.ok{background:var(--status-ok-bg);color:var(--status-ok)}
+.status-pill.watch{background:var(--status-watch-bg);color:var(--status-watch)}
+.status-pill.advisory{background:var(--status-advisory-bg);color:var(--status-advisory)}
+.status-pill.alarm{background:var(--status-alarm-bg);color:var(--status-alarm)}
+.status-pill.trip{background:var(--status-trip-bg);color:var(--status-trip)}
+
+/* SIDEBAR CONFIG */
+.config-section{padding:0 16px;margin-bottom:16px}
+.config-section h3{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.4);margin:16px 0 8px 0;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.1)}
+.config-section h3:first-child{margin-top:0}
+.form-row{display:flex;flex-direction:column;margin-bottom:8px}
+.form-row label{font-size:11px;font-weight:500;color:rgba(255,255,255,0.5);margin-bottom:3px}
+.config-input{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:6px 10px;font-size:12px;color:#FFF;width:100%;font-family:var(--font-ui)}
+.config-input:focus{outline:none;border-color:var(--gold-500);background:rgba(255,255,255,0.12)}
+.config-input option{background:var(--surface-sidebar);color:#FFF}
+
+/* UPLOAD */
+.upload-box{border:2px dashed rgba(255,255,255,0.2);border-radius:10px;padding:12px;text-align:center;cursor:pointer;transition:background 150ms;display:block;margin:0 16px}
+.upload-box:hover{background:rgba(255,255,255,0.06);border-color:var(--gold-500)}
+.upload-box input{display:none}
+.upload-box .up-title{font-weight:600;color:var(--gold-400);font-size:13px}
+.upload-box .up-sub{font-size:11px;color:rgba(255,255,255,0.4);margin-top:4px}
+
+/* BUTTONS */
+.btn{background:var(--gold-600);color:#FFF;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font-ui);transition:background 0.15s}
+.btn:hover{background:var(--gold-700)}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:6px}
+.btn-outline{background:transparent;color:var(--gold-600);border:1px solid var(--gold-600)}
+.btn-outline:hover{background:var(--gold-300)}
+.btn-sidebar{background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.15);width:calc(100% - 32px);margin:4px 16px;border-radius:8px;padding:8px;font-size:12px;cursor:pointer;font-family:var(--font-ui)}
+.btn-sidebar:hover{background:rgba(255,255,255,0.15);color:#FFF}
+
+/* ACTION BAR */
+.action-bar{display:flex;gap:8px;margin-bottom:var(--tile-gap);flex-wrap:wrap}
+
+/* SUMMARY ROW */
+.summary-row{display:flex;gap:8px;flex-wrap:wrap}
+.summary-row .stat{background:var(--gold-100);padding:6px 12px;border-radius:8px;font-size:13px}
+.summary-row .stat strong{color:var(--gold-700);font-family:var(--font-data)}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:48px;color:var(--text-secondary)}
+.empty-state h3{margin:0 0 8px 0;color:var(--text-primary);font-weight:600}
+
+/* MANUAL PANEL */
+.manual-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:100}
+.manual-panel{position:fixed;top:0;right:0;width:560px;height:100vh;background:var(--surface-card);box-shadow:-4px 0 24px rgba(0,0,0,0.12);z-index:101;display:none;flex-direction:column}
+.manual-panel.open{display:flex}
+.manual-panel-header{padding:16px 20px;border-bottom:1px solid var(--border-card);display:flex;align-items:center;justify-content:space-between}
+.manual-panel-header h3{font-size:16px;font-weight:600}
+.manual-panel-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-secondary);padding:4px 8px}
+.manual-pdf-btn{background:var(--gold-500);color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font-ui);margin-right:8px}.manual-pdf-btn:hover{background:var(--gold-600)}
+
+.manual-panel-body{flex:1;overflow-y:auto;padding:20px;font-size:14px;line-height:1.6}
+.manual-panel-body h3{margin:20px 0 8px 0;font-size:15px;font-weight:600;color:var(--gold-700)}
+.manual-panel-body h3:first-child{margin-top:0}
+.manual-panel-body p{margin-bottom:12px}
+.manual-panel-body code{background:var(--gold-100);padding:2px 6px;border-radius:4px;font-family:var(--font-data);font-size:13px}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <a class="sidebar-logo" href="welcome-home.html" title="Home"></a>
+      <span class="sidebar-title">ChemDash</span>
+    </div>
+    <div class="nav-section-label">Navigation</div>
+    <a class="nav-item" href="welcome-home.html">
+      <span class="nav-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7.5L9 2l7 5.5V15a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 012 15V7.5z"/><path d="M6.5 16.5V10h5v6.5"/></svg></span>
+      Home
+    </a>
+    <a class="nav-item active" href="#">
+      <span class="nav-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="5.5" height="5.5" rx="1"/><rect x="10.5" y="2" width="5.5" height="5.5" rx="1"/><rect x="2" y="10.5" width="5.5" height="5.5" rx="1"/><rect x="10.5" y="10.5" width="5.5" height="5.5" rx="1"/></svg></span>
+      Dashboard
+    </a>
+    <div class="sidebar-spacer"></div>
+
+    <div class="nav-section-label">Data</div>
+    <label class="upload-box" for="csvInput">
+      <input type="file" id="csvInput" accept=".csv"/>
+      <div class="up-title">Upload CSV</div>
+      <div class="up-sub" id="upStatus">No file loaded</div>
+    </label>
+    <button class="btn-sidebar" id="loadDemoBtn" style="margin-top:6px">Load demo data</button>
+
+    <div class="config-section">
+      <h3>Reference Point</h3>
+      <div class="form-row"><label>Fire reference (MW)</label><input class="config-input" type="number" id="setFireRef" value="25" step="1"/></div>
+      <div class="form-row"><label>Flow reference (kg/hr)</label><input class="config-input" type="number" id="setFlowRef" value="80000" step="1000"/></div>
+
+      <h3>Tube Offsets (K)</h3>
+      <div class="form-row"><label>T1 bottom offset</label><input class="config-input" type="number" id="setT1Offset" value="80" step="5"/></div>
+      <div class="form-row"><label>T2 offset</label><input class="config-input" type="number" id="setT2Offset" value="65" step="5"/></div>
+      <div class="form-row"><label>T3 offset</label><input class="config-input" type="number" id="setT3Offset" value="50" step="5"/></div>
+      <div class="form-row"><label>T4 top offset</label><input class="config-input" type="number" id="setT4Offset" value="35" step="5"/></div>
+
+      <h3>Limits (°C)</h3>
+      <div class="form-row"><label>Advisory</label><input class="config-input" type="number" id="limAdvisory" value="446" step="1"/></div>
+      <div class="form-row"><label>Alarm (PASCC)</label><input class="config-input" type="number" id="limAlarm" value="475" step="1"/></div>
+      <div class="form-row"><label>Trip limit</label><input class="config-input" type="number" id="limTrip" value="550" step="1"/></div>
+    </div>
+    <button class="btn-sidebar" id="recalcBtn">Recalculate</button>
+    <div style="height:16px"></div>
+  </nav>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="breadcrumb">
+      <a href="welcome-home.html">Home</a><span>/</span>Furnace Skin Temp
+    </div>
+    <div class="topbar-right">
+      <div class="avatar"></div>
+    </div>
+  </header>
+
+  <!-- CONTENT -->
+  <main class="content">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px">
+      <h1 style="font-size:22px;font-weight:700">Furnace Tube Skin Temperature — Radiant Section</h1>
+      <span style="font-size:12px;color:var(--text-secondary)">Dittus-Boelert · API 530</span>
+    </div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:20px">Fired heater · skin temp prediction via Dittus-Boelert correlation</p>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="dashboard">Dashboard</button>
+      <button class="tab" data-tab="data">Data & Log</button>
+      <button class="tab" data-tab="about">About</button>
+    </div>
+
+    <!-- ═══ DASHBOARD TAB ═══ -->
+    <section class="tab-panel active" id="panel-dashboard">
+      <div class="action-bar">
+        <button class="btn btn-sm" id="btnExport" title="Export processed data to CSV">Export CSV</button>
+        <button class="btn btn-sm btn-outline" id="btnManual" title="View engineering manual">View Manual</button>
+      </div>
+
+      <div id="statusArea">
+        <div class="empty-state">
+          <h3>No data loaded</h3>
+          <p>Upload a CSV or click <em>Load demo data</em> in the sidebar.</p>
+        </div>
+      </div>
+
+      <div id="kpiArea" style="display:none">
+        <div class="kpi-row">
+          <div class="kpi-tile headline"><div class="kpi-label">Hottest Tube (T1) °C</div><div class="kpi-value" id="kpiHottest">—</div><div class="kpi-limit">Radiant section</div></div>
+          <div class="kpi-tile"><div class="kpi-label">Margin to Advisory (K)</div><div class="kpi-value" id="kpiMargin">—</div><div class="kpi-limit">Advisory <span id="limAdvDisplay">446</span>°C</div></div>
+          <div class="kpi-tile"><div class="kpi-label">Process Outlet Temp (°C)</div><div class="kpi-value" id="kpiProcessT">—</div><div class="kpi-limit">Coil outlet</div></div>
+          <div class="kpi-tile"><div class="kpi-label">Fire Rate (MW)</div><div class="kpi-value" id="kpiFire">—</div><div class="kpi-limit">Duty input</div></div>
+          <div class="kpi-tile"><div class="kpi-label">Process Flow (kg/hr)</div><div class="kpi-value" id="kpiFlow">—</div><div class="kpi-limit">Feed rate</div></div>
+          <div class="kpi-tile"><div class="kpi-label">Residual (T1) (K)</div><div class="kpi-value" id="kpiResidual">—</div><div class="kpi-limit">Meas vs Pred</div></div>
+        </div>
+
+        <div class="banner status-ok" id="statusBanner">
+          <h2>Overall Status</h2>
+          <div class="banner-primary" id="statusText">OK</div>
+          <div class="banner-detail" id="statusDetail">All tubes within limits.</div>
+          <div id="alertList"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">Tube-by-Tube Status</div>
+          <div class="card-body" style="overflow-x:auto">
+            <table class="data">
+              <thead><tr><th>Tube</th><th>Measured (°C)</th><th>Predicted (°C)</th><th>Residual (K)</th><th>Margin to Adv (K)</th><th>Status</th></tr></thead>
+              <tbody id="tubeTable"><tr><td colspan="6" style="text-align:center;color:var(--text-secondary)">No data.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">Trends</div>
+          <div class="card-body">
+            <div class="chart-grid">
+              <div class="chart-box"><h4>Skin Temps (all tubes) vs Advisory/Alarm</h4><div class="chart-canvas-wrap"><canvas id="chart-temps"></canvas></div></div>
+              <div class="chart-box"><h4>T1 Measured vs Predicted</h4><div class="chart-canvas-wrap"><canvas id="chart-t1"></canvas></div></div>
+              <div class="chart-box"><h4>Residuals (K)</h4><div class="chart-canvas-wrap"><canvas id="chart-residuals"></canvas></div></div>
+              <div class="chart-box"><h4>Fire Rate (MW) & Flow (kg/hr)</h4><div class="chart-canvas-wrap"><canvas id="chart-power"></canvas></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ DATA TAB ═══ -->
+    <section class="tab-panel" id="panel-data">
+      <div class="card">
+        <div class="card-header">Batch summary</div>
+        <div class="card-body"><div class="summary-row" id="batchSummary"><div class="stat">No batch processed.</div></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header">Processed rows (most recent 50)</div>
+        <div class="card-body" style="overflow-x:auto">
+          <table class="data" id="resultTable">
+            <thead><tr><th>Timestamp</th><th>T1 Meas</th><th>T2 Meas</th><th>T3 Meas</th><th>T4 Meas</th><th>Process T</th><th>Fire (MW)</th><th>Flow (kg/hr)</th><th>Hottest</th><th>Residual</th><th>Status</th></tr></thead>
+            <tbody><tr><td colspan="11" style="text-align:center;color:var(--text-secondary)">No rows processed.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ ABOUT TAB ═══ -->
+    <section class="tab-panel" id="panel-about">
+      <div class="card"><div class="card-body">
+        <h3 style="margin-top:0;font-size:15px;font-weight:600;color:var(--gold-700)">Dittus-Boelert Correlation</h3>
+        <p>Tube skin temperature is predicted using the Dittus-Boelert forced-convection heat transfer correlation, a standard in fired heater design (API 560, API 530).</p>
+        <p><code>Delta_T = k * (Fire / Fire_ref)^0.8 * (Flow_ref / Flow)^0.8</code></p>
+        <p>where:</p>
+        <ul style="margin-left:20px;margin-bottom:12px">
+          <li><code>k</code> = tube-specific offset (K) accounting for radiant position (T1 bottom 80K, T2 65K, T3 50K, T4 top 35K)</li>
+          <li><code>Fire</code> = current firing rate (MW)</li>
+          <li><code>Fire_ref</code> = reference firing rate (25 MW default)</li>
+          <li><code>Flow</code> = current process flow (kg/hr)</li>
+          <li><code>Flow_ref</code> = reference flow (80,000 kg/hr default)</li>
+        </ul>
+        <p><strong>Predicted skin temp</strong> = Process outlet + Delta_T</p>
+        <h3 style="font-size:15px;font-weight:600;color:var(--gold-700);margin-top:16px">Limits (API 530, ASME PTC-4)</h3>
+        <p><strong>Advisory:</strong> 446°C — investigate; no immediate action.</p>
+        <p><strong>Alarm (PASCC):</strong> 475°C — process automatic shutdown cascade; action required.</p>
+        <p><strong>Trip:</strong> 550°C — emergency shutdown; system protection.</p>
+        <p style="font-size:12px;color:var(--text-secondary);margin-top:12px">Alert for residual >5 K signals potential correlation drift or sensor error.</p>
+        <h3 style="font-size:15px;font-weight:600;color:var(--gold-700);margin-top:16px">Scope</h3>
+        <p>Reference-grade PoC. Not a control system, not SIS. Not a substitute for a formal API 530 thermal design acceptance test.</p>
+      </div></div>
+    </section>
+  </main>
+</div>
+
+<!-- MANUAL PANEL -->
+<div class="manual-overlay" id="manualOverlay"></div>
+<div class="manual-panel" id="manualPanel">
+  <div class="manual-panel-header">
+    <h3>Engineering Manual — Furnace Skin Temperature</h3>
+    <div style="display:flex;align-items:center;gap:4px"><button class="manual-pdf-btn" id="manualPdf">Download PDF</button><button class="manual-panel-close" id="manualClose">&times;</button></div>
+  </div>
+  <div class="manual-panel-body">
+    <h3>1. Purpose & Scope</h3>
+    <p>Radiant section tube skin temperature monitoring and prediction for fired heaters using Dittus-Boelert forced-convection correlation per API 560 and API 530.</p>
+    <h3>2. Key Standards</h3>
+    <p><strong>API 560</strong> — Fired Heaters for Refinery Service. Thermal design guidelines for radiant section duty and skin temp limits.</p>
+    <p><strong>API 530</strong> — Tubular Heaters with Cylindrical Furnaces. Operational limits: advisory 446°C, alarm 475°C (PASCC), trip 550°C.</p>
+    <p><strong>ASME PTC-4</strong> — Performance Test Code on Indirect Heat Transfer Equipment. Methodology for thermal acceptance tests.</p>
+    <h3>3. Input Tags (6 variables)</h3>
+    <p>Timestamp, Skin T1, Skin T2, Skin T3, Skin T4 (measured °C), Process outlet T (°C), Firing rate (MW), Process flow (kg/hr).</p>
+    <h3>4. Correlation & Calculations</h3>
+    <p><code>Delta_T_i = k_i * (Fire/Fire_ref)^0.8 * (Flow_ref/Flow)^0.8</code></p>
+    <p><code>T_predicted = T_process + Delta_T</code></p>
+    <p>k_i: T1=80K (bottom, hottest), T2=65K, T3=50K, T4=35K (top, coolest).</p>
+    <p>Residual = T_measured - T_predicted. Alert if |residual| > 5 K.</p>
+    <h3>5. Alert Tiers</h3>
+    <p><strong>Watch:</strong> Any residual >5 K (measurement drift or correlation deviation).</p>
+    <p><strong>Advisory:</strong> Any T_measured >= 446°C.</p>
+    <p><strong>Alarm:</strong> Any T_measured >= 475°C (PASCC triggers).</p>
+    <p><strong>Trip:</strong> Any T_measured >= 550°C (emergency shutdown).</p>
+    <h3>6. Assumptions</h3>
+    <p>Correlation exponents fixed at 0.8 (valid for radiant furnaces). Process outlet temp forward-filled if missing (4-hour window). Default fire ref=25 MW, flow ref=80,000 kg/hr.</p>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// TAG ALIASES
+// ═══════════════════════════════════════════════════════
+const TAG_ALIASES={timestamp:["timestamp","Timestamp","Date","date","Time"],skin_t1_c:["skin_t1_c","T1","Skin T1","TMT1"],skin_t2_c:["skin_t2_c","T2","Skin T2","TMT2"],skin_t3_c:["skin_t3_c","T3","Skin T3","TMT3"],skin_t4_c:["skin_t4_c","T4","Skin T4","TMT4"],process_t_c:["process_t_c","Process Outlet T","Pass Outlet T","Coil Outlet T"],fire_rate_mw:["fire_rate_mw","Fire Rate","Firing Rate","Heater Duty"],process_flow_kghr:["process_flow_kghr","Process Flow","Charge Rate","Feed Flow"]};
+
+function lookup(row,canonical){const aliases=TAG_ALIASES[canonical]||[canonical];for(const a of aliases){if(row[a]!==undefined&&row[a]!==null&&String(row[a]).trim()!=="")return row[a];}return null;}
+function num(v){if(v===null||v===undefined||v==="")return NaN;if(typeof v==="number")return v;const n=parseFloat(String(v).replace(/,/g,"").trim());return isNaN(n)?NaN:n;}
+function parseTs(v){if(!v)return null;const s=String(v).trim();const m=s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?$/);if(m)return new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+(m[6]||0));const m2=s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{2,4})\s+(\d{1,2}):(\d{2})$/);if(m2){let y=+m2[3];if(y<100)y+=2000;return new Date(y,+m2[1]-1,+m2[2],+m2[4],+m2[5]);}const d=new Date(s);return isNaN(d.getTime())?null:d;}
+
+// ═══════════════════════════════════════════════════════
+// CORE MATH
+// ═══════════════════════════════════════════════════════
+function predictDT(fire,flow,k,s){if(fire<=0||flow<=0)return NaN;return k*Math.pow(fire/s.fireRef,0.8)*Math.pow(s.flowRef/flow,0.8);}
+function classify(t,limits){if(isNaN(t))return"ok";if(t>=limits.trip)return"trip";if(t>=limits.alarm)return"alarm";if(t>=limits.advisory)return"advisory";if(t>=limits.advisory-10)return"watch";return"ok";}
+function buildAlerts(tubes,limits){const a=[];let hasTrip=false,hasAlarm=false,hasAdvisory=false,hasWatch=false;tubes.forEach((tub,i)=>{if(!isNaN(tub.measured)){const status=classify(tub.measured,limits);if(status==="trip"){a.push({severity:"trip",message:`Tube ${tub.name} measured ${tub.measured.toFixed(1)}°C exceeds trip ${limits.trip}°C.`,source:"API 530"});hasTrip=true;}else if(status==="alarm"){a.push({severity:"alarm",message:`Tube ${tub.name} measured ${tub.measured.toFixed(1)}°C exceeds alarm ${limits.alarm}°C.`,source:"API 530 PASCC"});hasAlarm=true;}else if(status==="advisory"){a.push({severity:"advisory",message:`Tube ${tub.name} measured ${tub.measured.toFixed(1)}°C above advisory ${limits.advisory}°C.`,source:"API 530"});hasAdvisory=true;}}if(!isNaN(tub.residual)&&Math.abs(tub.residual)>5){a.push({severity:"watch",message:`Tube ${tub.name} residual ${tub.residual.toFixed(1)} K exceeds 5 K threshold.`,source:"measurement validation"});hasWatch=true;}});return{alerts:a,trip:hasTrip,alarm:hasAlarm,advisory:hasAdvisory,watch:hasWatch};}
+function rollUp(alerts){if(alerts.trip)return"trip";if(alerts.alarm)return"alarm";if(alerts.advisory)return"advisory";if(alerts.watch)return"watch";return"ok";}
+
+// ═══════════════════════════════════════════════════════
+// ROW & BATCH PROCESSOR
+// ═══════════════════════════════════════════════════════
+function processRow(row,s,lim,t1FF){const ts=parseTs(lookup(row,"timestamp"));if(!ts)return{drop:true,reason:"bad timestamp"};const t1=num(lookup(row,"skin_t1_c")),t2=num(lookup(row,"skin_t2_c")),t3=num(lookup(row,"skin_t3_c")),t4=num(lookup(row,"skin_t4_c"));const pt=num(lookup(row,"process_t_c")),fire=num(lookup(row,"fire_rate_mw")),flow=num(lookup(row,"process_flow_kghr"));if(isNaN(fire)||isNaN(flow)||isNaN(pt))return{drop:true,reason:"missing critical tag"};const tubes=[{name:"T1",measured:t1,offset:s.t1off,color:"#D4432A"},{name:"T2",measured:t2,offset:s.t2off,color:"#C4890E"},{name:"T3",measured:t3,offset:s.t3off,color:"#BB6E3D"},{name:"T4",measured:t4,offset:s.t4off,color:"#3A7D52"}];tubes.forEach(tub=>{const dt=predictDT(fire,flow,tub.offset,s);tub.predicted=isNaN(dt)?NaN:pt+dt;tub.residual=isNaN(tub.measured)||isNaN(tub.predicted)?NaN:tub.measured-tub.predicted;});const hottest=Math.max(...tubes.map(t=>t.measured).filter(x=>!isNaN(x)));const hotTube=tubes.find(t=>t.measured===hottest);const margin=isNaN(hottest)?NaN:lim.advisory-hottest;const residual1=tubes[0].residual;const alertInfo=buildAlerts(tubes,lim);const status=rollUp(alertInfo);return{drop:false,timestamp:ts,tubes,process_t:pt,fire,flow,hottest,hotTube:hotTube?hotTube.name:"—",margin,residual:residual1,alerts:alertInfo.alerts,status};}
+function processBatch(rows,s,lim){const parsed=[];for(const r of rows){const ts=parseTs(lookup(r,"timestamp"));if(ts)parsed.push([ts,r]);}parsed.sort((a,b)=>a[0]-b[0]);let lastT1=null,lastT1Ts=null;const out=[];let dropped=0;const reasons={};for(const[ts,r]of parsed){const live=num(lookup(r,"process_t_c"));let ff=null;if(isNaN(live)&&lastT1!==null){const ageH=(ts-lastT1Ts)/3600000;if(ageH<=4)ff=lastT1;}const res=processRow(r,s,lim,ff);if(res.drop){dropped++;reasons[res.reason]=(reasons[res.reason]||0)+1;}else{out.push(res);if(!isNaN(res.process_t)){lastT1=res.process_t;lastT1Ts=ts;}}}return{processed:out,dropped,reasons};}
+
+// ═══════════════════════════════════════════════════════
+// UI
+// ═══════════════════════════════════════════════════════
+let currentRows=[];let currentBatch=null;const charts={};
+function readSettings(){return{fireRef:+document.getElementById("setFireRef").value,flowRef:+document.getElementById("setFlowRef").value,t1off:+document.getElementById("setT1Offset").value,t2off:+document.getElementById("setT2Offset").value,t3off:+document.getElementById("setT3Offset").value,t4off:+document.getElementById("setT4Offset").value};}
+function readLimits(){return{advisory:+document.getElementById("limAdvisory").value,alarm:+document.getElementById("limAlarm").value,trip:+document.getElementById("limTrip").value};}
+function fmt(v,d){return(v===null||v===undefined||isNaN(v))?"—":(+v).toFixed(d);}
+
+function renderResult(res,lim){document.getElementById("statusArea").style.display="none";document.getElementById("kpiArea").style.display="block";document.getElementById("limAdvDisplay").textContent=lim.advisory;document.getElementById("kpiHottest").textContent=fmt(res.hottest,1)+" °C";document.getElementById("kpiMargin").textContent=fmt(res.margin,1)+" K";document.getElementById("kpiProcessT").textContent=fmt(res.process_t,1)+" °C";document.getElementById("kpiFire").textContent=fmt(res.fire,1)+" MW";document.getElementById("kpiFlow").textContent=fmt(res.flow,0)+" kg/hr";document.getElementById("kpiResidual").textContent=fmt(res.residual,1)+" K";const banner=document.getElementById("statusBanner");banner.className="banner status-"+res.status;document.getElementById("statusText").textContent=res.status.toUpperCase();const alertCount=res.alerts.length;document.getElementById("statusDetail").textContent=alertCount?`${alertCount} active alert(s)`:res.status==="ok"?"All tubes within limits.":"";document.getElementById("alertList").innerHTML=res.alerts.map(al=>`<div class="alert-item severity-${al.severity}"><strong>[${al.severity.toUpperCase()}]</strong> ${al.message}<span class="src">Source: ${al.source}</span></div>`).join("");}
+
+function mkChart(id,labels,datasets,dualY){if(charts[id]){charts[id].destroy();}const ctx=document.getElementById("chart-"+id).getContext("2d");const opts={responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{position:"bottom",labels:{font:{size:11,family:"IBM Plex Sans"},boxWidth:12}}},scales:{x:{ticks:{maxTicksLimit:6,font:{size:10,family:"IBM Plex Sans"}}},y:{ticks:{font:{size:10,family:"IBM Plex Mono"}}}},elements:{point:{radius:0},line:{borderWidth:1.5,tension:0.1}}};if(dualY)opts.scales.y1={position:"right",grid:{drawOnChartArea:false},ticks:{font:{size:10,family:"IBM Plex Mono"}}};charts[id]=new Chart(ctx,{type:"line",data:{labels,datasets},options:opts});}
+
+function renderBatch(batch,lim){const sumEl=document.getElementById("batchSummary");const tbody=document.getElementById("tubeTable");const resultTbody=document.getElementById("resultTable").querySelector("tbody");if(!batch||!batch.processed.length){sumEl.innerHTML='<div class="stat">No rows processed.</div>';tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-secondary)">No data.</td></tr>';resultTbody.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--text-secondary)">No rows.</td></tr>';return;}const reasons=Object.entries(batch.reasons).map(([k,v])=>`${k}: ${v}`).join("; ")||"none";const sc=batch.processed.reduce((acc,r)=>{acc[r.status]=(acc[r.status]||0)+1;return acc;},{});sumEl.innerHTML=`<div class="stat">Processed: <strong>${batch.processed.length}</strong></div><div class="stat">Dropped: <strong>${batch.dropped}</strong></div><div class="stat">Drop reasons: ${reasons}</div><div class="stat">OK: <strong>${sc.ok||0}</strong></div><div class="stat">Watch: <strong>${sc.watch||0}</strong></div><div class="stat">Advisory: <strong>${sc.advisory||0}</strong></div><div class="stat">Alarm: <strong>${sc.alarm||0}</strong></div><div class="stat">Trip: <strong>${sc.trip||0}</strong></div>`;const latestRow=batch.processed[batch.processed.length-1];tbody.innerHTML=latestRow.tubes.map(tub=>{const margin=lim.advisory-tub.measured;const marginFmt=isNaN(margin)?"—":margin.toFixed(1);return`<tr><td><strong>${tub.name}</strong></td><td class="num">${fmt(tub.measured,1)}</td><td class="num">${fmt(tub.predicted,1)}</td><td class="num">${fmt(tub.residual,1)}</td><td class="num">${marginFmt}</td><td><span class="status-pill ${classify(tub.measured,lim)}">${classify(tub.measured,lim)}</span></td></tr>`;}).join("");const rows=batch.processed.slice(-50).reverse();resultTbody.innerHTML=rows.map(r=>{const ts=r.timestamp;const tsStr=`${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,"0")}-${String(ts.getDate()).padStart(2,"0")} ${String(ts.getHours()).padStart(2,"0")}:${String(ts.getMinutes()).padStart(2,"0")}`;return`<tr><td>${tsStr}</td><td class="num">${fmt(r.tubes[0].measured,1)}</td><td class="num">${fmt(r.tubes[1].measured,1)}</td><td class="num">${fmt(r.tubes[2].measured,1)}</td><td class="num">${fmt(r.tubes[3].measured,1)}</td><td class="num">${fmt(r.process_t,1)}</td><td class="num">${fmt(r.fire,1)}</td><td class="num">${fmt(r.flow,0)}</td><td class="num">${fmt(r.hottest,1)}</td><td class="num">${fmt(r.residual,1)}</td><td><span class="status-pill ${r.status}">${r.status}</span></td></tr>`;}).join("");if(batch.processed.length<2)return;const stride=Math.max(1,Math.floor(batch.processed.length/200));const sample=batch.processed.filter((_,i)=>i%stride===0);const labels=sample.map(r=>{const d=r.timestamp;return`${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;});const advisoryLineData=sample.map(()=>lim.advisory);const alarmLineData=sample.map(()=>lim.alarm);mkChart("temps",labels,[{label:"T1 (hottest)",data:sample.map(r=>r.tubes[0].measured),borderColor:"#D4432A",backgroundColor:"transparent"},{label:"T2",data:sample.map(r=>r.tubes[1].measured),borderColor:"#C4890E",backgroundColor:"transparent"},{label:"T3",data:sample.map(r=>r.tubes[2].measured),borderColor:"#BB6E3D",backgroundColor:"transparent"},{label:"T4",data:sample.map(r=>r.tubes[3].measured),borderColor:"#3A7D52",backgroundColor:"transparent"},{label:`Advisory ${lim.advisory}°C`,data:advisoryLineData,borderColor:"#C4890E",backgroundColor:"transparent",borderDash:[8,6]},{label:`Alarm ${lim.alarm}°C`,data:alarmLineData,borderColor:"#D4432A",backgroundColor:"transparent",borderDash:[8,6]}],false);mkChart("t1",labels,[{label:"Measured",data:sample.map(r=>r.tubes[0].measured),borderColor:"#D4432A",backgroundColor:"transparent"},{label:"Predicted",data:sample.map(r=>r.tubes[0].predicted),borderColor:"#BB6E3D",backgroundColor:"transparent"}],false);mkChart("residuals",labels,[{label:"T1 residual",data:sample.map(r=>r.tubes[0].residual),borderColor:"#D4432A",backgroundColor:"transparent"},{label:"T2 residual",data:sample.map(r=>r.tubes[1].residual),borderColor:"#C4890E",backgroundColor:"transparent"},{label:"T3 residual",data:sample.map(r=>r.tubes[2].residual),borderColor:"#BB6E3D",backgroundColor:"transparent"},{label:"T4 residual",data:sample.map(r=>r.tubes[3].residual),borderColor:"#3A7D52",backgroundColor:"transparent"}],false);mkChart("power",labels,[{label:"Fire (MW)",data:sample.map(r=>r.fire),borderColor:"#BB6E3D",backgroundColor:"transparent",yAxisID:"y"},{label:"Flow (kg/hr)",data:sample.map(r=>r.flow/1000),borderColor:"#463B33",backgroundColor:"transparent",yAxisID:"y1"}],true);}
+
+function runProcess(){if(!currentRows.length)return;const s=readSettings(),l=readLimits();currentBatch=processBatch(currentRows,s,l);if(currentBatch.processed.length){renderResult(currentBatch.processed[currentBatch.processed.length-1],l);}else{document.getElementById("statusArea").style.display="block";document.getElementById("kpiArea").style.display="none";document.getElementById("statusArea").innerHTML='<div class="empty-state"><h3>All rows dropped</h3><p>Check Data & Log tab for drop reasons.</p></div>';}renderBatch(currentBatch,l);}
+
+// Demo data (28 rows, Feb 1-7 2026, 6-hour intervals — from original model)
+const DEMO_SERIES=[{"Timestamp":"2026-02-01 00:00","Process Outlet T":"361.0","Fire Rate":"25.04","Process Flow":"79962","Skin T1":"441.0","Skin T2":"426.2","Skin T3":"411.5","Skin T4":"394.5"},{"Timestamp":"2026-02-01 06:00","Process Outlet T":"360.6","Fire Rate":"24.77","Process Flow":"79831","Skin T1":"439.7","Skin T2":"427.0","Skin T3":"409.8","Skin T4":"397.7"},{"Timestamp":"2026-02-01 12:00","Process Outlet T":"360.9","Fire Rate":"25.00","Process Flow":"79769","Skin T1":"441.7","Skin T2":"424.0","Skin T3":"413.4","Skin T4":"394.5"},{"Timestamp":"2026-02-01 18:00","Process Outlet T":"359.2","Fire Rate":"24.97","Process Flow":"80077","Skin T1":"440.2","Skin T2":"421.9","Skin T3":"407.8","Skin T4":"394.5"},{"Timestamp":"2026-02-02 00:00","Process Outlet T":"360.7","Fire Rate":"25.24","Process Flow":"80190","Skin T1":"443.2","Skin T2":"425.3","Skin T3":"411.9","Skin T4":"397.9"},{"Timestamp":"2026-02-02 06:00","Process Outlet T":"359.9","Fire Rate":"25.25","Process Flow":"80325","Skin T1":"442.2","Skin T2":"424.3","Skin T3":"410.9","Skin T4":"393.5"},{"Timestamp":"2026-02-02 12:00","Process Outlet T":"360.8","Fire Rate":"24.89","Process Flow":"79964","Skin T1":"439.2","Skin T2":"423.8","Skin T3":"408.4","Skin T4":"396.3"},{"Timestamp":"2026-02-02 18:00","Process Outlet T":"360.5","Fire Rate":"25.03","Process Flow":"80121","Skin T1":"442.1","Skin T2":"426.2","Skin T3":"411.6","Skin T4":"394.1"},{"Timestamp":"2026-02-03 00:00","Process Outlet T":"360.8","Fire Rate":"25.25","Process Flow":"80111","Skin T1":"441.7","Skin T2":"425.3","Skin T3":"410.6","Skin T4":"397.8"},{"Timestamp":"2026-02-03 06:00","Process Outlet T":"359.3","Fire Rate":"24.98","Process Flow":"80223","Skin T1":"437.7","Skin T2":"425.0","Skin T3":"408.2","Skin T4":"393.4"},{"Timestamp":"2026-02-03 12:00","Process Outlet T":"360.7","Fire Rate":"25.25","Process Flow":"80266","Skin T1":"439.3","Skin T2":"425.6","Skin T3":"411.9","Skin T4":"393.5"},{"Timestamp":"2026-02-03 18:00","Process Outlet T":"360.6","Fire Rate":"25.30","Process Flow":"79745","Skin T1":"441.1","Skin T2":"424.8","Skin T3":"409.5","Skin T4":"396.1"},{"Timestamp":"2026-02-04 00:00","Process Outlet T":"360.1","Fire Rate":"25.40","Process Flow":"80128","Skin T1":"440.5","Skin T2":"428.3","Skin T3":"411.4","Skin T4":"396.5"},{"Timestamp":"2026-02-04 06:00","Process Outlet T":"360.4","Fire Rate":"25.26","Process Flow":"79892","Skin T1":"441.7","Skin T2":"424.9","Skin T3":"411.9","Skin T4":"394.7"},{"Timestamp":"2026-02-04 12:00","Process Outlet T":"360.7","Fire Rate":"25.37","Process Flow":"80066","Skin T1":"442.3","Skin T2":"428.9","Skin T3":"413.5","Skin T4":"397.2"},{"Timestamp":"2026-02-04 18:00","Process Outlet T":"360.7","Fire Rate":"25.22","Process Flow":"79659","Skin T1":"443.1","Skin T2":"427.8","Skin T3":"409.8","Skin T4":"395.7"},{"Timestamp":"2026-02-05 00:00","Process Outlet T":"361.0","Fire Rate":"26.09","Process Flow":"71205","Skin T1":"452.7","Skin T2":"436.3","Skin T3":"416.8","Skin T4":"399.8"},{"Timestamp":"2026-02-05 06:00","Process Outlet T":"360.4","Fire Rate":"25.87","Process Flow":"74072","Skin T1":"448.0","Skin T2":"430.0","Skin T3":"416.3","Skin T4":"398.7"},{"Timestamp":"2026-02-05 12:00","Process Outlet T":"360.7","Fire Rate":"25.63","Process Flow":"79692","Skin T1":"442.7","Skin T2":"425.0","Skin T3":"411.6","Skin T4":"396.9"},{"Timestamp":"2026-02-05 18:00","Process Outlet T":"359.7","Fire Rate":"25.55","Process Flow":"79609","Skin T1":"445.0","Skin T2":"427.2","Skin T3":"411.3","Skin T4":"393.7"},{"Timestamp":"2026-02-06 00:00","Process Outlet T":"359.0","Fire Rate":"25.49","Process Flow":"79849","Skin T1":"441.8","Skin T2":"424.9","Skin T3":"410.9","Skin T4":"393.9"},{"Timestamp":"2026-02-06 06:00","Process Outlet T":"360.4","Fire Rate":"25.39","Process Flow":"79713","Skin T1":"445.4","Skin T2":"424.8","Skin T3":"410.7","Skin T4":"397.6"},{"Timestamp":"2026-02-06 12:00","Process Outlet T":"359.6","Fire Rate":"25.69","Process Flow":"80322","Skin T1":"444.1","Skin T2":"424.1","Skin T3":"411.6","Skin T4":"397.7"},{"Timestamp":"2026-02-06 18:00","Process Outlet T":"358.9","Fire Rate":"25.44","Process Flow":"80038","Skin T1":"441.7","Skin T2":"427.2","Skin T3":"411.8","Skin T4":"395.1"},{"Timestamp":"2026-02-07 00:00","Process Outlet T":"360.1","Fire Rate":"25.96","Process Flow":"80053","Skin T1":"446.2","Skin T2":"426.7","Skin T3":"413.6","Skin T4":"395.2"},{"Timestamp":"2026-02-07 06:00","Process Outlet T":"359.4","Fire Rate":"25.45","Process Flow":"80361","Skin T1":"443.1","Skin T2":"424.2","Skin T3":"407.7","Skin T4":"396.7"},{"Timestamp":"2026-02-07 12:00","Process Outlet T":"359.9","Fire Rate":"26.04","Process Flow":"80157","Skin T1":"444.5","Skin T2":"425.5","Skin T3":"410.5","Skin T4":"397.0"},{"Timestamp":"2026-02-07 18:00","Process Outlet T":"359.7","Fire Rate":"25.96","Process Flow":"79969","Skin T1":"448.8","Skin T2":"426.7","Skin T3":"409.7","Skin T4":"396.1"}];
+
+// ═══════════════════════════════════════════════════════
+// WIRING
+// ═══════════════════════════════════════════════════════
+
+// Tabs
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".tab-panel").forEach(x=>x.classList.remove("active"));t.classList.add("active");document.getElementById("panel-"+t.dataset.tab).classList.add("active");}));
+
+// CSV upload
+document.getElementById("csvInput").addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;document.getElementById("upStatus").textContent="Parsing...";Papa.parse(f,{header:true,skipEmptyLines:true,complete:r=>{currentRows=r.data;document.getElementById("upStatus").textContent=f.name+" · "+currentRows.length+" rows";runProcess();}});});
+
+// Demo button
+document.getElementById("loadDemoBtn").addEventListener("click",()=>{currentRows=DEMO_SERIES;document.getElementById("upStatus").textContent="Demo loaded · "+DEMO_SERIES.length+" rows";runProcess();});
+
+// Recalculate
+document.getElementById("recalcBtn").addEventListener("click",runProcess);
+document.querySelectorAll(".config-input").forEach(inp=>inp.addEventListener("change",runProcess));
+
+// Export
+document.getElementById("btnExport").addEventListener("click",()=>{if(!currentBatch||!currentBatch.processed.length)return;const hdrs=["Timestamp","T1","T2","T3","T4","Process_T","Fire_MW","Flow_kghr","Hottest","Residual","Status"];const rows=currentBatch.processed.map(r=>{const ts=r.timestamp;return[`${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,"0")}-${String(ts.getDate()).padStart(2,"0")} ${String(ts.getHours()).padStart(2,"0")}:${String(ts.getMinutes()).padStart(2,"0")}`,fmt(r.tubes[0].measured,1),fmt(r.tubes[1].measured,1),fmt(r.tubes[2].measured,1),fmt(r.tubes[3].measured,1),fmt(r.process_t,1),fmt(r.fire,1),fmt(r.flow,0),fmt(r.hottest,1),fmt(r.residual,1),r.status].join(",");});const csv=hdrs.join(",")+"\n"+rows.join("\n");const blob=new Blob([csv],{type:"text/csv"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="furnace-skin-temp-export.csv";a.click();});
+
+// Manual panel
+document.getElementById("btnManual").addEventListener("click",()=>{document.getElementById("manualPanel").classList.add("open");document.getElementById("manualOverlay").style.display="block";});
+document.getElementById("manualClose").addEventListener("click",()=>{document.getElementById("manualPanel").classList.remove("open");document.getElementById("manualOverlay").style.display="none";});
+document.getElementById("manualOverlay").addEventListener("click",()=>{document.getElementById("manualPanel").classList.remove("open");document.getElementById("manualOverlay").style.display="none";});
+
+// Auto-load demo
+currentRows=DEMO_SERIES;document.getElementById("upStatus").textContent="Demo auto-loaded · "+DEMO_SERIES.length+" rows";runProcess();
+
+document.getElementById("manualPdf").addEventListener("click",function(){
+  var body=document.querySelector(".manual-panel-body").innerHTML;
+  var win=window.open("","_blank");
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Engineering Manual — Furnace Skin Temperature</title>'+
+    '<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">'+
+    '<style>body{font-family:\'IBM Plex Sans\',-apple-system,sans-serif;font-size:13px;line-height:1.7;color:#32302F;max-width:700px;margin:40px auto;padding:0 24px}'+
+    'h1{font-size:20px;font-weight:700;color:#463B33;border-bottom:2px solid #E29C57;padding-bottom:8px;margin-bottom:24px}'+
+    'h3{font-size:14px;font-weight:600;color:#763D16;margin:20px 0 8px}'+
+    'p{margin-bottom:10px}'+
+    'code{background:#F7F6F2;padding:2px 6px;border-radius:4px;font-family:\'IBM Plex Mono\',monospace;font-size:12px}'+
+    'strong{color:#463B33}'+
+    '@media print{body{margin:20px}@page{margin:1.5cm}}</style></head><body>'+
+    '<h1>Engineering Manual — Furnace Skin Temperature</h1>'+body+'</body></html>');
+  win.document.close();
+  setTimeout(function(){win.print();},400);
+});
+</script>
+</body>
+</html>

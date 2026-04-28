@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChemDash — Fired Heater Efficiency</title>
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --gold-800:#463B33;--gold-700:#763D16;--gold-600:#BB6E3D;--gold-500:#E29C57;
+  --gold-400:#F9A471;--gold-300:#FCEEE5;--gold-200:#E9E3DE;--gold-100:#F7F6F2;
+  --text-primary:#32302F;--text-secondary:#615E5C;
+  --status-ok:#3A7D52;--status-ok-bg:#E5F0E8;
+  --status-advisory:#C4890E;--status-advisory-bg:#FAF0E0;
+  --status-alarm:#D4432A;--status-alarm-bg:#FCEBEB;
+  --status-trip:#7a1d14;--status-trip-bg:#f5d5d1;
+  --surface-page:#F7F6F2;--surface-card:#FFFFFF;--surface-sidebar:#463B33;
+  --border-card:#E9E3DE;
+  --shadow-card:0 1px 7px rgba(0,0,0,0.05),0 0 16px rgba(0,0,0,0.05);
+  --shadow-sidebar:2px 0 8px rgba(0,0,0,0.06);
+  --shadow-topbar:0 2px 6px rgba(0,0,0,0.04);
+  --radius-card:16px;--radius-status:12px;--radius-alert:10px;--radius-nav:8px;
+  --sidebar-width:180px;--topbar-height:56px;--content-margin:24px;--tile-gap:16px;
+  --font-ui:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,sans-serif;
+  --font-data:'IBM Plex Mono','SF Mono','Consolas',monospace;
+}
+body{font-family:var(--font-ui);background:var(--surface-page);color:var(--text-primary);overflow:hidden;height:100vh}
+
+/* SHELL */
+.shell{display:grid;grid-template-columns:var(--sidebar-width) 1fr;grid-template-rows:var(--topbar-height) 1fr;height:100vh}
+
+/* SIDEBAR */
+.sidebar{grid-row:1/-1;background:var(--surface-sidebar);box-shadow:var(--shadow-sidebar);display:flex;flex-direction:column;padding-top:16px;z-index:10}
+.sidebar-header{display:flex;align-items:center;gap:10px;padding:0 16px;margin-bottom:32px}
+.sidebar-logo{width:36px;height:36px;border-radius:50%;background:var(--gold-500);flex-shrink:0;text-decoration:none}
+.sidebar-title{font-size:15px;font-weight:600;color:#FFF;letter-spacing:0.3px}
+.nav-section-label{font-size:10px;font-weight:500;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1.2px;padding:0 16px;margin-bottom:8px;margin-top:8px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:8px 16px;border-radius:var(--radius-nav);margin:0 8px 2px 8px;cursor:pointer;transition:background 0.15s;text-decoration:none;color:rgba(255,255,255,0.6);font-size:13px;font-weight:500}
+.nav-item:hover{background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.85)}
+.nav-item.active{background:rgba(255,255,255,0.12);color:#FFF}
+.nav-icon{width:18px;height:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.nav-icon svg{width:18px;height:18px}
+.sidebar-spacer{flex:1}
+
+/* TOPBAR */
+.topbar{background:var(--surface-card);box-shadow:var(--shadow-topbar);display:flex;align-items:center;padding:0 var(--content-margin);justify-content:space-between;z-index:5}
+.breadcrumb{font-size:13px;color:var(--text-secondary)}
+.breadcrumb a{color:var(--text-secondary);text-decoration:none}
+.breadcrumb a:hover{color:var(--gold-600)}
+.breadcrumb span{margin:0 6px;opacity:0.4}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--gold-600)}
+
+/* CONTENT */
+.content{padding:var(--content-margin);overflow-y:auto}
+
+/* TABS */
+.tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border-card)}
+.tab{padding:10px 16px;font-size:13px;font-weight:500;color:var(--text-secondary);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;transition:color 0.15s}
+.tab:hover{color:var(--text-primary)}
+.tab.active{color:var(--gold-700);border-bottom-color:var(--gold-600)}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* CARDS */
+.card{background:var(--surface-card);border:1px solid var(--border-card);border-radius:var(--radius-card);box-shadow:var(--shadow-card);margin-bottom:var(--tile-gap)}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--border-card);font-weight:600;font-size:14px;display:flex;align-items:center;justify-content:space-between}
+.card-body{padding:20px}
+
+/* KPI */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:var(--tile-gap)}
+.kpi-tile{background:var(--surface-card);border:1px solid var(--border-card);border-radius:var(--radius-card);padding:12px 16px;transition:border-color 0.15s}
+.kpi-tile:hover{border-color:var(--gold-500)}
+.kpi-tile .kpi-label{font-size:11px;font-weight:500;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.03em}
+.kpi-tile .kpi-value{font-family:var(--font-data);font-size:20px;font-weight:500;margin-top:4px}
+.kpi-tile .kpi-limit{font-size:10px;color:var(--text-secondary);margin-top:2px}
+.kpi-tile.headline{background:var(--gold-300);border-color:var(--gold-500)}
+
+/* STATUS BANNER */
+.banner{border-left:4px solid var(--status-ok);padding:16px 20px;border-radius:var(--radius-alert);background:var(--surface-card);margin-bottom:var(--tile-gap);box-shadow:var(--shadow-card)}
+.banner h2{margin:0 0 4px 0;font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-secondary)}
+.banner .banner-primary{font-size:18px;font-weight:700}
+.banner .banner-detail{margin-top:4px;font-size:13px;color:var(--text-secondary)}
+.banner.status-ok{border-left-color:var(--status-ok)}.banner.status-ok .banner-primary{color:var(--status-ok)}
+.banner.status-advisory{border-left-color:var(--status-advisory);background:var(--status-advisory-bg)}.banner.status-advisory .banner-primary{color:var(--status-advisory)}
+.banner.status-alarm{border-left-color:var(--status-alarm);background:var(--status-alarm-bg)}.banner.status-alarm .banner-primary{color:var(--status-alarm)}
+.banner.status-trip{border-left-color:var(--status-trip);background:var(--status-trip-bg)}.banner.status-trip .banner-primary{color:var(--status-trip)}
+.alert-item{padding:8px 12px;border-radius:6px;margin-top:8px;font-size:13px}
+.alert-item.severity-advisory{background:var(--status-advisory-bg);color:var(--status-advisory);border-left:3px solid var(--status-advisory)}
+.alert-item.severity-alarm{background:var(--status-alarm-bg);color:var(--status-alarm);border-left:3px solid var(--status-alarm)}
+.alert-item.severity-trip{background:var(--status-trip-bg);color:var(--status-trip);border-left:3px solid var(--status-trip)}
+.alert-item .src{font-size:10px;color:var(--text-secondary);display:block;margin-top:2px}
+
+/* CHARTS */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--tile-gap)}
+@media(max-width:1100px){.chart-grid{grid-template-columns:1fr}}
+.chart-box{background:var(--surface-card);border:1px solid var(--border-card);border-radius:var(--radius-card);padding:16px;box-shadow:var(--shadow-card)}
+.chart-box h4{margin:0 0 12px 0;font-size:12px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.03em}
+.chart-canvas-wrap{position:relative;height:220px}
+
+/* TABLE */
+table.data{width:100%;border-collapse:collapse;font-size:13px}
+table.data th,table.data td{padding:8px 12px;border-bottom:1px solid var(--border-card);text-align:left}
+table.data th{font-weight:600;color:var(--text-secondary);text-transform:uppercase;font-size:11px;letter-spacing:0.03em;background:var(--gold-100)}
+table.data td.num{font-family:var(--font-data);text-align:right}
+.status-pill{display:inline-block;padding:2px 8px;border-radius:var(--radius-status);font-size:11px;font-weight:500}
+.status-pill.ok{background:var(--status-ok-bg);color:var(--status-ok)}
+.status-pill.advisory{background:var(--status-advisory-bg);color:var(--status-advisory)}
+.status-pill.alarm{background:var(--status-alarm-bg);color:var(--status-alarm)}
+.status-pill.trip{background:var(--status-trip-bg);color:var(--status-trip)}
+
+/* SIDEBAR CONFIG */
+.config-section{padding:0 16px;margin-bottom:16px}
+.config-section h3{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:rgba(255,255,255,0.4);margin:16px 0 8px 0;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.1)}
+.config-section h3:first-child{margin-top:0}
+.form-row{display:flex;flex-direction:column;margin-bottom:8px}
+.form-row label{font-size:11px;font-weight:500;color:rgba(255,255,255,0.5);margin-bottom:3px}
+.config-input{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:6px;padding:6px 10px;font-size:12px;color:#FFF;width:100%;font-family:var(--font-ui)}
+.config-input:focus{outline:none;border-color:var(--gold-500);background:rgba(255,255,255,0.12)}
+.config-input option{background:var(--surface-sidebar);color:#FFF}
+
+/* UPLOAD */
+.upload-box{border:2px dashed rgba(255,255,255,0.2);border-radius:10px;padding:12px;text-align:center;cursor:pointer;transition:background 150ms;display:block;margin:0 16px}
+.upload-box:hover{background:rgba(255,255,255,0.06);border-color:var(--gold-500)}
+.upload-box input{display:none}
+.upload-box .up-title{font-weight:600;color:var(--gold-400);font-size:13px}
+.upload-box .up-sub{font-size:11px;color:rgba(255,255,255,0.4);margin-top:4px}
+
+/* BUTTONS */
+.btn{background:var(--gold-600);color:#FFF;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font-ui);transition:background 0.15s}
+.btn:hover{background:var(--gold-700)}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:6px}
+.btn-outline{background:transparent;color:var(--gold-600);border:1px solid var(--gold-600)}
+.btn-outline:hover{background:var(--gold-300)}
+.btn-sidebar{background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.15);width:calc(100% - 32px);margin:4px 16px;border-radius:8px;padding:8px;font-size:12px;cursor:pointer;font-family:var(--font-ui)}
+.btn-sidebar:hover{background:rgba(255,255,255,0.15);color:#FFF}
+
+/* ACTION BAR */
+.action-bar{display:flex;gap:8px;margin-bottom:var(--tile-gap);flex-wrap:wrap}
+
+/* SUMMARY ROW */
+.summary-row{display:flex;gap:8px;flex-wrap:wrap}
+.summary-row .stat{background:var(--gold-100);padding:6px 12px;border-radius:8px;font-size:13px}
+.summary-row .stat strong{color:var(--gold-700);font-family:var(--font-data)}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:48px;color:var(--text-secondary)}
+.empty-state h3{margin:0 0 8px 0;color:var(--text-primary);font-weight:600}
+
+/* MANUAL PANEL */
+.manual-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:100}
+.manual-panel{position:fixed;top:0;right:0;width:560px;height:100vh;background:var(--surface-card);box-shadow:-4px 0 24px rgba(0,0,0,0.12);z-index:101;display:none;flex-direction:column}
+.manual-panel.open{display:flex}
+.manual-panel-header{padding:16px 20px;border-bottom:1px solid var(--border-card);display:flex;align-items:center;justify-content:space-between}
+.manual-panel-header h3{font-size:16px;font-weight:600}
+.manual-panel-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-secondary);padding:4px 8px}
+.manual-pdf-btn{background:var(--gold-500);color:#fff;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font-ui);margin-right:8px}.manual-pdf-btn:hover{background:var(--gold-600)}
+
+.manual-panel-body{flex:1;overflow-y:auto;padding:20px;font-size:14px;line-height:1.6}
+.manual-panel-body h3{margin:20px 0 8px 0;font-size:15px;font-weight:600;color:var(--gold-700)}
+.manual-panel-body h3:first-child{margin-top:0}
+.manual-panel-body p{margin-bottom:12px}
+.manual-panel-body code{background:var(--gold-100);padding:2px 6px;border-radius:4px;font-family:var(--font-data);font-size:13px}
+
+/* LOSS BREAKDOWN */
+.loss-bars{display:flex;gap:4px;align-items:flex-end;height:120px;margin-bottom:12px}
+.loss-bar{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
+.loss-bar-inner{width:100%;background:var(--gold-600);border-radius:4px 4px 0 0;min-height:2px}
+.loss-bar-label{font-size:10px;font-weight:500;color:var(--text-secondary);margin-top:6px;text-align:center}
+.loss-bar-value{font-size:11px;font-family:var(--font-data);font-weight:500;color:var(--text-primary)}
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-header">
+      <a class="sidebar-logo" href="welcome-home.html" title="Home"></a>
+      <span class="sidebar-title">ChemDash</span>
+    </div>
+    <div class="nav-section-label">Navigation</div>
+    <a class="nav-item" href="welcome-home.html">
+      <span class="nav-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7.5L9 2l7 5.5V15a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 012 15V7.5z"/><path d="M6.5 16.5V10h5v6.5"/></svg></span>
+      Home
+    </a>
+    <a class="nav-item active" href="#">
+      <span class="nav-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="5.5" height="5.5" rx="1"/><rect x="10.5" y="2" width="5.5" height="5.5" rx="1"/><rect x="2" y="10.5" width="5.5" height="5.5" rx="1"/><rect x="10.5" y="10.5" width="5.5" height="5.5" rx="1"/></svg></span>
+      Dashboard
+    </a>
+    <div class="sidebar-spacer"></div>
+
+    <div class="nav-section-label">Data</div>
+    <label class="upload-box" for="csvInput">
+      <input type="file" id="csvInput" accept=".csv"/>
+      <div class="up-title">Upload CSV</div>
+      <div class="up-sub" id="upStatus">No file loaded</div>
+    </label>
+    <button class="btn-sidebar" id="loadDemoBtn" style="margin-top:6px">Load demo data</button>
+
+    <div class="config-section">
+      <h3>Settings</h3>
+      <div class="form-row"><label>Stoich air (kg/kg)</label><input class="config-input" type="number" id="setStochAir" value="17.2" step="0.1"/></div>
+      <div class="form-row"><label>H2O formed (kg/kg)</label><input class="config-input" type="number" id="setH2OForm" value="2.25" step="0.1"/></div>
+      <div class="form-row"><label>Fuel MW (kg/kmol)</label><input class="config-input" type="number" id="setFuelMW" value="17.5" step="0.5"/></div>
+      <div class="form-row"><label>Flue gas Cp (kJ/kg/K)</label><input class="config-input" type="number" id="setFlueCP" value="1.08" step="0.01"/></div>
+      <div class="form-row"><label>H2O Cp (kJ/kg/K)</label><input class="config-input" type="number" id="setH2OCP" value="2.00" step="0.01"/></div>
+      <div class="form-row"><label>Radiation loss (%)</label><input class="config-input" type="number" id="setRadLoss" value="2.0" step="0.1"/></div>
+      <div class="form-row"><label>Unaccounted loss (%)</label><input class="config-input" type="number" id="setUnacc" value="0.5" step="0.1"/></div>
+      <div class="form-row"><label>Headline method</label>
+        <select class="config-input" id="setEffMethod"><option value="direct">direct (input/output)</option><option value="indirect">indirect (loss)</option></select></div>
+
+      <h3>Limits</h3>
+      <div class="form-row"><label>Stack T adv (C)</label><input class="config-input" type="number" id="limStackAdv" value="400" step="5"/></div>
+      <div class="form-row"><label>Stack T alarm</label><input class="config-input" type="number" id="limStackAlm" value="450" step="5"/></div>
+      <div class="form-row"><label>Stack T trip</label><input class="config-input" type="number" id="limStackTrip" value="500" step="5"/></div>
+      <div class="form-row"><label>Bridgewall adv (C)</label><input class="config-input" type="number" id="limBWAdv" value="830" step="5"/></div>
+      <div class="form-row"><label>Bridgewall alarm</label><input class="config-input" type="number" id="limBWAlm" value="870" step="5"/></div>
+      <div class="form-row"><label>Bridgewall trip</label><input class="config-input" type="number" id="limBWTrip" value="900" step="5"/></div>
+      <div class="form-row"><label>Excess air adv (%)</label><input class="config-input" type="number" id="limEAAdv" value="25" step="1"/></div>
+      <div class="form-row"><label>Excess air alarm</label><input class="config-input" type="number" id="limEAAlm" value="40" step="1"/></div>
+      <div class="form-row"><label>O2 low adv (%)</label><input class="config-input" type="number" id="limO2Low" value="2.0" step="0.1"/></div>
+      <div class="form-row"><label>Eff adv (%)</label><input class="config-input" type="number" id="limEffAdv" value="82" step="1"/></div>
+      <div class="form-row"><label>Eff alarm (%)</label><input class="config-input" type="number" id="limEffAlm" value="78" step="1"/></div>
+    </div>
+    <button class="btn-sidebar" id="recalcBtn">Recalculate</button>
+    <div style="height:16px"></div>
+  </nav>
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="breadcrumb">
+      <a href="welcome-home.html">Home</a><span>/</span>Fired Heater Efficiency
+    </div>
+    <div class="topbar-right">
+      <div class="avatar"></div>
+    </div>
+  </header>
+
+  <!-- CONTENT -->
+  <main class="content">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px">
+      <h1 style="font-size:22px;font-weight:700">Fired Heater Efficiency — Performance & Losses</h1>
+      <span style="font-size:12px;color:var(--text-secondary)">API 560 · ASME PTC 4</span>
+    </div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:20px">Natural-gas-fired process heater · L3/L4 furnace</p>
+
+    <div class="tabs">
+      <button class="tab active" data-tab="dashboard">Dashboard</button>
+      <button class="tab" data-tab="data">Data & Log</button>
+      <button class="tab" data-tab="about">About</button>
+    </div>
+
+    <!-- ═══ DASHBOARD TAB ═══ -->
+    <section class="tab-panel active" id="panel-dashboard">
+      <div class="action-bar">
+        <button class="btn btn-sm" id="btnExport" title="Export processed data to CSV">Export CSV</button>
+        <button class="btn btn-sm btn-outline" id="btnManual" title="View engineering manual">View Manual</button>
+      </div>
+
+      <div id="statusArea">
+        <div class="empty-state">
+          <h3>No data loaded</h3>
+          <p>Upload a CSV or click <em>Load demo data</em> in the sidebar.</p>
+        </div>
+      </div>
+
+      <div id="kpiArea" style="display:none">
+        <div class="kpi-row">
+          <div class="kpi-tile headline"><div class="kpi-label">Headline Efficiency (<span id="kpiEffMethod">direct</span>)</div><div class="kpi-value" id="kpiEffHeadline">—</div><div class="kpi-limit">API 560 §5.4</div></div>
+          <div class="kpi-tile"><div class="kpi-label">n direct</div><div class="kpi-value" id="kpiEffDirect">—</div><div class="kpi-limit">input/output</div></div>
+          <div class="kpi-tile"><div class="kpi-label">n indirect</div><div class="kpi-value" id="kpiEffIndirect">—</div><div class="kpi-limit">loss method</div></div>
+          <div class="kpi-tile"><div class="kpi-label">Delta (dir−ind)</div><div class="kpi-value" id="kpiEffDelta">—</div><div class="kpi-limit">consistency</div></div>
+        </div>
+        <div class="kpi-row">
+          <div class="kpi-tile"><div class="kpi-label">Heat absorbed</div><div class="kpi-value" id="kpiQAbs">—</div><div class="kpi-limit">kW</div></div>
+          <div class="kpi-tile"><div class="kpi-label">Fired duty</div><div class="kpi-value" id="kpiQFired">—</div><div class="kpi-limit">kW</div></div>
+          <div class="kpi-tile"><div class="kpi-label">Excess air</div><div class="kpi-value" id="kpiEA">—</div><div class="kpi-limit">%</div></div>
+          <div class="kpi-tile"><div class="kpi-label">Stack O2</div><div class="kpi-value" id="kpiO2">—</div><div class="kpi-limit">%</div></div>
+          <div class="kpi-tile"><div class="kpi-label">Stack T</div><div class="kpi-value" id="kpiStackT">—</div><div class="kpi-limit">C</div></div>
+          <div class="kpi-tile"><div class="kpi-label">Bridgewall T</div><div class="kpi-value" id="kpiBWT">—</div><div class="kpi-limit">C</div></div>
+        </div>
+
+        <div class="banner status-ok" id="statusBanner">
+          <h2>Overall Status</h2>
+          <div class="banner-primary" id="statusText">OK</div>
+          <div class="banner-detail" id="statusDetail">No active alerts.</div>
+          <div id="alertList"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">Loss Breakdown (% of fuel LHV)</div>
+          <div class="card-body">
+            <div class="loss-bars">
+              <div class="loss-bar">
+                <div class="loss-bar-inner" id="lossBarDry" style="height:50%"></div>
+                <div class="loss-bar-value" id="lossValDry">—</div>
+                <div class="loss-bar-label">Dry stack</div>
+              </div>
+              <div class="loss-bar">
+                <div class="loss-bar-inner" id="lossBarMoist" style="height:30%;background:var(--gold-500)"></div>
+                <div class="loss-bar-value" id="lossValMoist">—</div>
+                <div class="loss-bar-label">Moisture</div>
+              </div>
+              <div class="loss-bar">
+                <div class="loss-bar-inner" id="lossBarRad" style="height:20%;background:var(--gold-400)"></div>
+                <div class="loss-bar-value" id="lossValRad">—</div>
+                <div class="loss-bar-label">Radiation</div>
+              </div>
+              <div class="loss-bar">
+                <div class="loss-bar-inner" id="lossBarUnacc" style="height:10%;background:var(--gold-200)"></div>
+                <div class="loss-bar-value" id="lossValUnacc">—</div>
+                <div class="loss-bar-label">Unaccounted</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">Trends<span style="font-weight:400;font-size:11px;color:var(--text-secondary);margin-left:8px">(batch mode)</span></div>
+          <div class="card-body">
+            <div class="chart-grid">
+              <div class="chart-box"><h4>Efficiency (%) — direct & indirect</h4><div class="chart-canvas-wrap"><canvas id="chart-eff"></canvas></div></div>
+              <div class="chart-box"><h4>Heat Duty (kW)</h4><div class="chart-canvas-wrap"><canvas id="chart-heat"></canvas></div></div>
+              <div class="chart-box"><h4>Excess Air (%) & Stack O2 (%)</h4><div class="chart-canvas-wrap"><canvas id="chart-ea"></canvas></div></div>
+              <div class="chart-box"><h4>Stack & Bridgewall Temp (C)</h4><div class="chart-canvas-wrap"><canvas id="chart-temp"></canvas></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ DATA TAB ═══ -->
+    <section class="tab-panel" id="panel-data">
+      <div class="card">
+        <div class="card-header">Batch summary</div>
+        <div class="card-body"><div class="summary-row" id="batchSummary"><div class="stat">No batch processed.</div></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header">Processed rows (most recent 50)</div>
+        <div class="card-body" style="overflow-x:auto">
+          <table class="data" id="resultTable">
+            <thead><tr><th>Timestamp</th><th>Q Abs (kW)</th><th>Q Fired (kW)</th><th>n Direct</th><th>n Indirect</th><th>Delta</th><th>EA%</th><th>O2%</th><th>Stack (C)</th><th>Bridge (C)</th><th>Status</th></tr></thead>
+            <tbody><tr><td colspan="11" style="text-align:center;color:var(--text-secondary)">No rows processed.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ ABOUT TAB ═══ -->
+    <section class="tab-panel" id="panel-about">
+      <div class="card"><div class="card-body">
+        <h3 style="margin-top:0;font-size:15px;font-weight:600;color:var(--gold-700)">Formulas</h3>
+        <p><strong>Heat absorbed</strong>: Q_abs = m_proc * Cp * (T_out - T_in) / 3600 [kW]</p>
+        <p><strong>Fired duty (LHV basis)</strong>: Q_fired = V_fuel * LHV * 1000/3600 [kW]</p>
+        <p><strong>Direct efficiency</strong> (ASME PTC 4 §5.12): η_direct = 100 * Q_abs / Q_fired [%]</p>
+        <p><strong>Excess air</strong> (ASME PTC 4 Appendix A): EA = 100 * O2 / (20.95 - O2) [%]</p>
+        <p><strong>Indirect efficiency</strong> (loss method): η_indirect = 100 - L_dry - L_moisture - L_radiation - L_unaccounted</p>
+        <p><strong>Dry flue-gas loss</strong>: L_dry = m_fg_dry * Cp_fg * (T_stack - T_ambient) / LHV_kg [% of fuel]</p>
+        <p><strong>Moisture loss</strong>: L_moist = m_h2o * (Latent + Cp_h2o * (T_stack - T_fuel)) / LHV_kg [% of fuel]</p>
+        <h3 style="font-size:15px;font-weight:600;color:var(--gold-700);margin-top:16px">Alert Tiers</h3>
+        <p>Stack temperature follows API 560 §5.4 guidance: advisory at 400 C, alarm at 450 C, trip at 500 C. Bridgewall follows tube metallurgy limits: advisory at 830 C, alarm at 870 C, trip at 900 C. Excess air advisory at 25%, alarm at 40%. Stack O2 below 2% triggers CO formation alarm.</p>
+        <h3 style="font-size:15px;font-weight:600;color:var(--gold-700);margin-top:16px">Scope</h3>
+        <p>Reference-grade PoC. Not a control system, not SIS. Indirect method uses sensible-only H2O loss on LHV basis. Efficiency values are not clamped to 0-100%. A negative or >100% value is a data-quality signal.</p>
+        <p style="font-size:12px;color:var(--text-secondary);margin-top:8px">See engineering manual for complete tag list, assumptions, and standards references.</p>
+      </div></div>
+    </section>
+  </main>
+</div>
+
+<!-- MANUAL PANEL -->
+<div class="manual-overlay" id="manualOverlay"></div>
+<div class="manual-panel" id="manualPanel">
+  <div class="manual-panel-header">
+    <h3>Engineering Manual — Fired Heater</h3>
+    <div style="display:flex;align-items:center;gap:4px"><button class="manual-pdf-btn" id="manualPdf">Download PDF</button><button class="manual-panel-close" id="manualClose">&times;</button></div>
+  </div>
+  <div class="manual-panel-body">
+    <h3>1. Purpose & Scope</h3>
+    <p>Thermal efficiency monitoring dashboard for a natural-gas-fired process heater. Computes both direct (input/output) and indirect (loss) method efficiencies per ASME PTC 4. Reports consistency gap between methods as a data-quality check. Tracks combustion, recovery, and tube temperatures per API 560.</p>
+    <h3>2. Key Standards</h3>
+    <p><strong>API 560</strong> — Fired Heaters for General Refinery Service. §5.4 covers stack temperature limits and efficiency guidance.</p>
+    <p><strong>ASME PTC 4</strong> — Fired Steam Generators. §5.12 direct efficiency, §5.14.4 loss method, Appendix A excess air from O2.</p>
+    <h3>3. Input Tags (13 variables)</h3>
+    <p>Process inlet/outlet temps (C), process flow (kg/hr), process Cp (kJ/kg/K), fuel flow (Nm3/hr), fuel LHV (MJ/Nm3), stack O2 (%), stack temp (C), bridgewall temp (C), ambient temp (C), fuel temp (C).</p>
+    <h3>4. Output KPIs</h3>
+    <p>Direct efficiency, indirect efficiency, efficiency delta, heat absorbed, fired duty, excess air %, stack O2, stack and bridgewall temps, loss breakdown (dry, moisture, radiation, unaccounted).</p>
+    <h3>5. Alert Thresholds</h3>
+    <p>Stack T: advisory 400, alarm 450, trip 500 C. Bridgewall: advisory 830, alarm 870, trip 900 C. Excess air: advisory 25, alarm 40%. O2 low: alarm &lt; 2%. Efficiency: advisory &lt; 82, alarm &lt; 78%.</p>
+    <h3>6. Fuel Properties (defaults)</h3>
+    <p>Stoichiometric air: 17.2 kg/kg. H2O from combustion: 2.25 kg/kg. Fuel MW: 17.5 kg/kmol (methane-dominated gas). Flue-gas Cp: 1.08 kJ/kg/K. H2O Cp: 2.0 kJ/kg/K. Radiation loss: 2.0%. Unaccounted loss: 0.5%.</p>
+    <h3>7. Assumptions</h3>
+    <p>Perfect combustion with no CO. Flue gas modeled as ideal gas with constant Cp. Sensible-only H2O loss on LHV basis (latent heat of vaporization already excluded by LHV definition). No heat of formation corrections. Direct efficiency is Q_absorbed / Q_fired. Indirect method is loss-based with %LHV reporting.</p>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// TAG ALIASES
+// ═══════════════════════════════════════════════════════
+const TAG_ALIASES={timestamp:["timestamp","Timestamp","Date","date","Time"],process_inlet_c:["process_inlet_c","Process Inlet Temp"],process_outlet_c:["process_outlet_c","Process Outlet Temp"],process_flow_kghr:["process_flow_kghr","Process Flow"],process_cp_kjkgk:["process_cp_kjkgk","Process Cp"],fuel_flow_nm3hr:["fuel_flow_nm3hr","Fuel Gas Flow"],fuel_lhv_mjnm3:["fuel_lhv_mjnm3","Fuel Gas LHV"],stack_o2_pct:["stack_o2_pct","Stack O2"],stack_temp_c:["stack_temp_c","Stack Temp"],bridgewall_temp_c:["bridgewall_temp_c","Bridgewall Temp"],ambient_temp_c:["ambient_temp_c","Ambient Temp"],fuel_temp_c:["fuel_temp_c","Fuel Temp"]};
+
+function lookup(row,canonical){const aliases=TAG_ALIASES[canonical]||[canonical];for(const a of aliases){if(row[a]!==undefined&&row[a]!==null&&String(row[a]).trim()!=="")return row[a];}return null;}
+function num(v){if(v===null||v===undefined||v==="")return NaN;if(typeof v==="number")return v;const n=parseFloat(String(v).replace(/,/g,"").trim());return isNaN(n)?NaN:n;}
+function parseTs(v){if(!v)return null;const s=String(v).trim();const m=s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?$/);if(m)return new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+(m[6]||0));const m2=s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{2,4})\s+(\d{1,2}):(\d{2})$/);if(m2){let y=+m2[3];if(y<100)y+=2000;return new Date(y,+m2[1]-1,+m2[2],+m2[4],+m2[5]);}const d=new Date(s);return isNaN(d.getTime())?null:d;}
+
+// ═══════════════════════════════════════════════════════
+// CORE MATH
+// ═══════════════════════════════════════════════════════
+function heatAbsorbedKw(m,cp,tin,tout){if(any([m,cp,tin,tout],isNaN))return NaN;return m*cp*(tout-tin)/3600.0;}
+function firedDutyKw(v,lhv){if(isNaN(v)||isNaN(lhv))return NaN;return v*lhv*1000.0/3600.0;}
+function directEff(qa,qf){if(isNaN(qa)||isNaN(qf)||qf<=0)return NaN;return 100.0*qa/qf;}
+function excessAir(o2){if(isNaN(o2)||o2>=20.9)return NaN;return 100.0*o2/(20.95-o2);}
+function lhvKjKg(lhv,mw){return lhv*1000.0*22.414/mw;}
+function stackDryLoss(tStk,tAmb,ea,s){if(isNaN(tStk)||isNaN(tAmb)||isNaN(ea))return NaN;const EA=ea/100.0;const air=(1.0+EA)*s.stoich_air;const fg_dry=1.0+air-s.h2o_form;return fg_dry*s.flue_cp*(tStk-tAmb);}
+function stackMoistureLoss(tStk,tFuel,s){if(isNaN(tStk))return NaN;const tf=isNaN(tFuel)?25:tFuel;const mh2o=s.h2o_form;return mh2o*(s.h2o_latent+s.h2o_cp*(tStk-tf));}
+function indirectEff(tStk,tAmb,tFuel,ea,lhv,s){if(isNaN(lhv))return[NaN,{}];const lhv_kj=lhvKjKg(lhv,s.fuel_mw);const l_dry=stackDryLoss(tStk,tAmb,ea,s);const l_h2o=stackMoistureLoss(tStk,tFuel,s);if(isNaN(l_dry)||isNaN(l_h2o))return[NaN,{}];const pct_dry=100.0*l_dry/lhv_kj;const pct_moist=100.0*l_h2o/lhv_kj;const pct_rad=s.rad_loss;const pct_un=s.unacc_loss;const eff=100.0-(pct_dry+pct_moist+pct_rad+pct_un);return[eff,{dry:pct_dry,moist:pct_moist,rad:pct_rad,unacc:pct_un}];}
+function any(xs,f){for(const x of xs)if(f(x))return true;return false;}
+function buildAlerts(tStk,tBW,ea,o2,eff,lim){const a=[];if(!isNaN(tStk)){if(tStk>=lim.stk_trip)a.push({severity:"trip",message:`Stack temperature ${tStk.toFixed(0)} C exceeds trip ${lim.stk_trip} C.`,source:"API 560 §5.4"});else if(tStk>=lim.stk_alm)a.push({severity:"alarm",message:`Stack temperature ${tStk.toFixed(0)} C exceeds alarm ${lim.stk_alm} C.`,source:"API 560 §5.4"});else if(tStk>=lim.stk_adv)a.push({severity:"advisory",message:`Stack temperature ${tStk.toFixed(0)} C above advisory ${lim.stk_adv} C.`,source:"API 560 §5.4"});}if(!isNaN(tBW)){if(tBW>=lim.bw_trip)a.push({severity:"trip",message:`Bridgewall ${tBW.toFixed(0)} C exceeds trip ${lim.bw_trip} C.`,source:"tube metallurgy"});else if(tBW>=lim.bw_alm)a.push({severity:"alarm",message:`Bridgewall ${tBW.toFixed(0)} C exceeds alarm ${lim.bw_alm} C.`,source:"tube metallurgy"});else if(tBW>=lim.bw_adv)a.push({severity:"advisory",message:`Bridgewall ${tBW.toFixed(0)} C above advisory ${lim.bw_adv} C.`,source:"tube metallurgy"});}if(!isNaN(ea)){if(ea>=lim.ea_alm)a.push({severity:"alarm",message:`Excess air ${ea.toFixed(1)} % above alarm ${lim.ea_alm} % — major loss.`,source:"ASME PTC 4"});else if(ea>=lim.ea_adv)a.push({severity:"advisory",message:`Excess air ${ea.toFixed(1)} % above advisory ${lim.ea_adv} %.`,source:"ASME PTC 4"});}if(!isNaN(o2)&&o2<lim.o2_low)a.push({severity:"alarm",message:`Stack O2 ${o2.toFixed(1)} % below ${lim.o2_low} % — CO formation risk.`,source:"combustion safety"});if(!isNaN(eff)){if(eff<lim.eff_alm)a.push({severity:"alarm",message:`Efficiency ${eff.toFixed(1)} % below alarm ${lim.eff_alm} %.`,source:"API 560"});else if(eff<lim.eff_adv)a.push({severity:"advisory",message:`Efficiency ${eff.toFixed(1)} % below advisory ${lim.eff_adv} %.`,source:"API 560"});}return a;}
+function rollUp(alerts){if(alerts.some(x=>x.severity==="trip"))return"trip";if(alerts.some(x=>x.severity==="alarm"))return"alarm";if(alerts.some(x=>x.severity==="advisory"))return"advisory";return"ok";}
+
+// ═══════════════════════════════════════════════════════
+// ROW & BATCH PROCESSOR
+// ═══════════════════════════════════════════════════════
+function processRow(row,s,lim){const ts=parseTs(lookup(row,"timestamp"));if(!ts)return{drop:true,reason:"bad timestamp"};const tin=num(lookup(row,"process_inlet_c"));const tout=num(lookup(row,"process_outlet_c"));const mproc=num(lookup(row,"process_flow_kghr"));const cp=num(lookup(row,"process_cp_kjkgk"));const vf=num(lookup(row,"fuel_flow_nm3hr"));const lhv=num(lookup(row,"fuel_lhv_mjnm3"));const o2=num(lookup(row,"stack_o2_pct"));const tstk=num(lookup(row,"stack_temp_c"));const tbw=num(lookup(row,"bridgewall_temp_c"));const tamb=num(lookup(row,"ambient_temp_c"));const tfuel=num(lookup(row,"fuel_temp_c"));if(any([tin,tout,mproc,cp,vf,lhv],isNaN))return{drop:true,reason:"missing critical tag"};const qa=heatAbsorbedKw(mproc,cp,tin,tout);const qf=firedDutyKw(vf,lhv);const eff_dir=directEff(qa,qf);const ea=excessAir(o2);const[eff_ind,losses]=indirectEff(tstk,tamb,tfuel,ea,lhv,s);const method=s.eff_method;const eff_headline=method==="direct"?eff_dir:eff_ind;const eff_delta=(!isNaN(eff_dir)&&!isNaN(eff_ind))?eff_dir-eff_ind:NaN;const alerts=buildAlerts(tstk,tbw,ea,o2,eff_headline,lim);const status=rollUp(alerts);return{drop:false,timestamp:ts,qa,qf,eff_dir,eff_ind,eff_delta,eff_headline,ea,o2,tstk,tbw,losses,alerts,status};}
+function processBatch(rows,s,lim){const parsed=[];for(const r of rows){const ts=parseTs(lookup(r,"timestamp"));if(ts)parsed.push([ts,r]);}parsed.sort((a,b)=>a[0]-b[0]);const out=[];let dropped=0;const reasons={};for(const[_,r]of parsed){const res=processRow(r,s,lim);if(res.drop){dropped++;reasons[res.reason]=(reasons[res.reason]||0)+1;}else out.push(res);}return{processed:out,dropped,reasons};}
+
+// ═══════════════════════════════════════════════════════
+// UI
+// ═══════════════════════════════════════════════════════
+let currentRows=[];let currentBatch=null;const charts={};
+function readSettings(){return{stoich_air:+document.getElementById("setStochAir").value,h2o_form:+document.getElementById("setH2OForm").value,fuel_mw:+document.getElementById("setFuelMW").value,flue_cp:+document.getElementById("setFlueCP").value,h2o_cp:+document.getElementById("setH2OCP").value,rad_loss:+document.getElementById("setRadLoss").value,unacc_loss:+document.getElementById("setUnacc").value,eff_method:document.getElementById("setEffMethod").value,h2o_latent:0.0};}
+function readLimits(){return{stk_adv:+document.getElementById("limStackAdv").value,stk_alm:+document.getElementById("limStackAlm").value,stk_trip:+document.getElementById("limStackTrip").value,bw_adv:+document.getElementById("limBWAdv").value,bw_alm:+document.getElementById("limBWAlm").value,bw_trip:+document.getElementById("limBWTrip").value,ea_adv:+document.getElementById("limEAAdv").value,ea_alm:+document.getElementById("limEAAlm").value,o2_low:+document.getElementById("limO2Low").value,eff_adv:+document.getElementById("limEffAdv").value,eff_alm:+document.getElementById("limEffAlm").value};}
+function fmt(v,d){return(v===null||v===undefined||isNaN(v))?"—":(+v).toFixed(d);}
+
+function renderResult(res,lim){document.getElementById("statusArea").style.display="none";document.getElementById("kpiArea").style.display="block";document.getElementById("kpiEffMethod").textContent=readSettings().eff_method;document.getElementById("kpiEffHeadline").textContent=fmt(res.eff_headline,2)+" %";document.getElementById("kpiEffDirect").textContent=fmt(res.eff_dir,2)+" %";document.getElementById("kpiEffIndirect").textContent=fmt(res.eff_ind,2)+" %";document.getElementById("kpiEffDelta").textContent=fmt(res.eff_delta,2)+" pp";document.getElementById("kpiQAbs").textContent=fmt(res.qa,1);document.getElementById("kpiQFired").textContent=fmt(res.qf,1);document.getElementById("kpiEA").textContent=fmt(res.ea,1);document.getElementById("kpiO2").textContent=fmt(res.o2,2);document.getElementById("kpiStackT").textContent=fmt(res.tstk,1);document.getElementById("kpiBWT").textContent=fmt(res.tbw,0);const banner=document.getElementById("statusBanner");banner.className="banner status-"+res.status;document.getElementById("statusText").textContent=res.status.toUpperCase();document.getElementById("statusDetail").textContent=res.alerts.length?`${res.alerts.length} active alert(s)`:"No active alerts.";document.getElementById("alertList").innerHTML=res.alerts.map(al=>`<div class="alert-item severity-${al.severity}"><strong>[${al.severity.toUpperCase()}]</strong> ${al.message}<span class="src">Source: ${al.source}</span></div>`).join("");const los=res.losses;const maxLoss=Math.max(los.dry,los.moist,los.rad,los.unacc,1);document.getElementById("lossBarDry").style.height=(los.dry/maxLoss*100)+"%";document.getElementById("lossValDry").textContent=fmt(los.dry,1);document.getElementById("lossBarMoist").style.height=(los.moist/maxLoss*100)+"%";document.getElementById("lossValMoist").textContent=fmt(los.moist,1);document.getElementById("lossValRad").textContent=fmt(los.rad,1);document.getElementById("lossValUnacc").textContent=fmt(los.unacc,1);}
+
+function mkChart(id,labels,datasets,dualY){if(charts[id]){charts[id].destroy();}const ctx=document.getElementById("chart-"+id).getContext("2d");const opts={responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{position:"bottom",labels:{font:{size:11,family:"IBM Plex Sans"},boxWidth:12}}},scales:{x:{ticks:{maxTicksLimit:6,font:{size:10,family:"IBM Plex Sans"}}},y:{ticks:{font:{size:10,family:"IBM Plex Mono"}}}},elements:{point:{radius:0},line:{borderWidth:1.5,tension:0.1}}};if(dualY)opts.scales.y1={position:"right",grid:{drawOnChartArea:false},ticks:{font:{size:10,family:"IBM Plex Mono"}}};charts[id]=new Chart(ctx,{type:"line",data:{labels,datasets},options:opts});}
+
+function renderBatch(batch){const sumEl=document.getElementById("batchSummary");const tbody=document.getElementById("resultTable").querySelector("tbody");if(!batch||!batch.processed.length){sumEl.innerHTML='<div class="stat">No rows processed.</div>';tbody.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--text-secondary)">No rows.</td></tr>';return;}const reasons=Object.entries(batch.reasons).map(([k,v])=>`${k}: ${v}`).join("; ")||"none";const sc=batch.processed.reduce((acc,r)=>{acc[r.status]=(acc[r.status]||0)+1;return acc;},{});sumEl.innerHTML=`<div class="stat">Processed: <strong>${batch.processed.length}</strong></div><div class="stat">Dropped: <strong>${batch.dropped}</strong></div><div class="stat">Drop reasons: ${reasons}</div><div class="stat">OK: <strong>${sc.ok||0}</strong></div><div class="stat">Advisory: <strong>${sc.advisory||0}</strong></div><div class="stat">Alarm: <strong>${sc.alarm||0}</strong></div><div class="stat">Trip: <strong>${sc.trip||0}</strong></div>`;const rows=batch.processed.slice(-50).reverse();tbody.innerHTML=rows.map(r=>{const ts=r.timestamp;const tsStr=`${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,"0")}-${String(ts.getDate()).padStart(2,"0")} ${String(ts.getHours()).padStart(2,"0")}:${String(ts.getMinutes()).padStart(2,"0")}`;return`<tr><td>${tsStr}</td><td class="num">${fmt(r.qa,1)}</td><td class="num">${fmt(r.qf,1)}</td><td class="num">${fmt(r.eff_dir,2)}</td><td class="num">${fmt(r.eff_ind,2)}</td><td class="num">${fmt(r.eff_delta,2)}</td><td class="num">${fmt(r.ea,1)}</td><td class="num">${fmt(r.o2,2)}</td><td class="num">${fmt(r.tstk,1)}</td><td class="num">${fmt(r.tbw,0)}</td><td><span class="status-pill ${r.status}">${r.status}</span></td></tr>`;}).join("");if(batch.processed.length<2)return;const stride=Math.max(1,Math.floor(batch.processed.length/200));const sample=batch.processed.filter((_,i)=>i%stride===0);const labels=sample.map(r=>{const d=r.timestamp;return`${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;});mkChart("eff",labels,[{label:"n direct",data:sample.map(r=>isNaN(r.eff_dir)?null:r.eff_dir),borderColor:"#BB6E3D",backgroundColor:"transparent"},{label:"n indirect",data:sample.map(r=>isNaN(r.eff_ind)?null:r.eff_ind),borderColor:"#3A7D52",backgroundColor:"transparent"}],false);mkChart("heat",labels,[{label:"Q abs (kW)",data:sample.map(r=>r.qa),borderColor:"#BB6E3D",backgroundColor:"transparent"},{label:"Q fired (kW)",data:sample.map(r=>r.qf),borderColor:"#763D16",backgroundColor:"transparent"}],false);mkChart("ea",labels,[{label:"EA %",data:sample.map(r=>r.ea),borderColor:"#C4890E",backgroundColor:"transparent",yAxisID:"y"},{label:"O2 %",data:sample.map(r=>r.o2),borderColor:"#615E5C",backgroundColor:"transparent",yAxisID:"y1"}],true);mkChart("temp",labels,[{label:"Stack (C)",data:sample.map(r=>r.tstk),borderColor:"#D4432A",backgroundColor:"transparent",yAxisID:"y"},{label:"Bridgewall (C)",data:sample.map(r=>r.tbw),borderColor:"#C4890E",backgroundColor:"transparent",yAxisID:"y1"}],true);}
+
+function runProcess(){if(!currentRows.length)return;const s=readSettings(),l=readLimits();currentBatch=processBatch(currentRows,s,l);if(currentBatch.processed.length){renderResult(currentBatch.processed[currentBatch.processed.length-1],l);}else{document.getElementById("statusArea").style.display="block";document.getElementById("kpiArea").style.display="none";document.getElementById("statusArea").innerHTML='<div class="empty-state"><h3>All rows dropped</h3><p>Check Data & Log tab for drop reasons.</p></div>';}renderBatch(currentBatch);}
+
+// Demo data — exact 28-row series from original model (6-hour intervals, Feb 1–7)
+const DEMO_SERIES=[{"Timestamp":"2026-02-01 00:00","Process Inlet Temp":"209.8","Process Outlet Temp":"354.7","Process Flow":"81933","Process Cp":"2.450","Fuel Gas Flow":"910.5","Fuel Gas LHV":"37.79","Stack O2":"3.12","Stack Temp":"377.5","Bridgewall Temp":"783","Ambient Temp":"14.3","Fuel Temp":"25.1"},{"Timestamp":"2026-02-01 06:00","Process Inlet Temp":"212.1","Process Outlet Temp":"354.6","Process Flow":"81146","Process Cp":"2.450","Fuel Gas Flow":"892.6","Fuel Gas LHV":"37.90","Stack O2":"3.28","Stack Temp":"378.7","Bridgewall Temp":"780","Ambient Temp":"14.1","Fuel Temp":"25.7"},{"Timestamp":"2026-02-01 12:00","Process Inlet Temp":"210.1","Process Outlet Temp":"352.2","Process Flow":"82132","Process Cp":"2.450","Fuel Gas Flow":"883.1","Fuel Gas LHV":"37.89","Stack O2":"3.28","Stack Temp":"386.8","Bridgewall Temp":"798","Ambient Temp":"19.1","Fuel Temp":"23.7"},{"Timestamp":"2026-02-01 18:00","Process Inlet Temp":"209.7","Process Outlet Temp":"351.5","Process Flow":"82272","Process Cp":"2.450","Fuel Gas Flow":"901.1","Fuel Gas LHV":"37.73","Stack O2":"3.03","Stack Temp":"390.3","Bridgewall Temp":"784","Ambient Temp":"16.2","Fuel Temp":"26.0"},{"Timestamp":"2026-02-02 00:00","Process Inlet Temp":"208.3","Process Outlet Temp":"355.6","Process Flow":"80613","Process Cp":"2.450","Fuel Gas Flow":"897.4","Fuel Gas LHV":"37.84","Stack O2":"3.50","Stack Temp":"396.2","Bridgewall Temp":"781","Ambient Temp":"13.8","Fuel Temp":"24.3"},{"Timestamp":"2026-02-02 06:00","Process Inlet Temp":"211.6","Process Outlet Temp":"352.7","Process Flow":"82402","Process Cp":"2.450","Fuel Gas Flow":"885.9","Fuel Gas LHV":"37.83","Stack O2":"3.80","Stack Temp":"391.6","Bridgewall Temp":"774","Ambient Temp":"16.7","Fuel Temp":"23.1"},{"Timestamp":"2026-02-02 12:00","Process Inlet Temp":"209.8","Process Outlet Temp":"352.2","Process Flow":"81436","Process Cp":"2.450","Fuel Gas Flow":"892.5","Fuel Gas LHV":"37.70","Stack O2":"3.67","Stack Temp":"394.7","Bridgewall Temp":"780","Ambient Temp":"21.8","Fuel Temp":"25.0"},{"Timestamp":"2026-02-02 18:00","Process Inlet Temp":"208.2","Process Outlet Temp":"355.2","Process Flow":"82317","Process Cp":"2.450","Fuel Gas Flow":"926.0","Fuel Gas LHV":"37.73","Stack O2":"3.17","Stack Temp":"391.4","Bridgewall Temp":"780","Ambient Temp":"15.0","Fuel Temp":"23.3"},{"Timestamp":"2026-02-03 00:00","Process Inlet Temp":"209.9","Process Outlet Temp":"353.7","Process Flow":"81401","Process Cp":"2.450","Fuel Gas Flow":"924.9","Fuel Gas LHV":"37.95","Stack O2":"3.44","Stack Temp":"382.3","Bridgewall Temp":"768","Ambient Temp":"11.1","Fuel Temp":"24.6"},{"Timestamp":"2026-02-03 06:00","Process Inlet Temp":"211.6","Process Outlet Temp":"348.7","Process Flow":"82106","Process Cp":"2.450","Fuel Gas Flow":"907.5","Fuel Gas LHV":"37.74","Stack O2":"3.12","Stack Temp":"400.1","Bridgewall Temp":"788","Ambient Temp":"14.7","Fuel Temp":"24.6"},{"Timestamp":"2026-02-03 12:00","Process Inlet Temp":"212.1","Process Outlet Temp":"354.8","Process Flow":"80992","Process Cp":"2.450","Fuel Gas Flow":"907.8","Fuel Gas LHV":"37.75","Stack O2":"3.23","Stack Temp":"387.3","Bridgewall Temp":"766","Ambient Temp":"16.8","Fuel Temp":"25.4"},{"Timestamp":"2026-02-03 18:00","Process Inlet Temp":"208.8","Process Outlet Temp":"352.4","Process Flow":"82301","Process Cp":"2.450","Fuel Gas Flow":"906.3","Fuel Gas LHV":"37.81","Stack O2":"2.99","Stack Temp":"388.1","Bridgewall Temp":"781","Ambient Temp":"11.7","Fuel Temp":"24.8"},{"Timestamp":"2026-02-04 00:00","Process Inlet Temp":"213.2","Process Outlet Temp":"355.6","Process Flow":"82404","Process Cp":"2.450","Fuel Gas Flow":"890.4","Fuel Gas LHV":"38.18","Stack O2":"2.99","Stack Temp":"389.8","Bridgewall Temp":"777","Ambient Temp":"19.9","Fuel Temp":"25.4"},{"Timestamp":"2026-02-04 06:00","Process Inlet Temp":"210.9","Process Outlet Temp":"350.6","Process Flow":"81851","Process Cp":"2.450","Fuel Gas Flow":"890.3","Fuel Gas LHV":"37.77","Stack O2":"3.17","Stack Temp":"406.1","Bridgewall Temp":"786","Ambient Temp":"12.2","Fuel Temp":"24.7"},{"Timestamp":"2026-02-04 12:00","Process Inlet Temp":"208.8","Process Outlet Temp":"355.1","Process Flow":"81310","Process Cp":"2.450","Fuel Gas Flow":"884.7","Fuel Gas LHV":"37.92","Stack O2":"3.38","Stack Temp":"389.7","Bridgewall Temp":"775","Ambient Temp":"14.0","Fuel Temp":"23.3"},{"Timestamp":"2026-02-04 18:00","Process Inlet Temp":"211.3","Process Outlet Temp":"352.2","Process Flow":"82871","Process Cp":"2.450","Fuel Gas Flow":"906.0","Fuel Gas LHV":"37.78","Stack O2":"2.74","Stack Temp":"404.9","Bridgewall Temp":"775","Ambient Temp":"18.9","Fuel Temp":"25.4"},{"Timestamp":"2026-02-05 00:00","Process Inlet Temp":"209.1","Process Outlet Temp":"349.8","Process Flow":"82626","Process Cp":"2.450","Fuel Gas Flow":"877.6","Fuel Gas LHV":"37.86","Stack O2":"3.30","Stack Temp":"401.7","Bridgewall Temp":"796","Ambient Temp":"8.8","Fuel Temp":"24.2"},{"Timestamp":"2026-02-05 06:00","Process Inlet Temp":"210.3","Process Outlet Temp":"353.3","Process Flow":"82366","Process Cp":"2.450","Fuel Gas Flow":"900.4","Fuel Gas LHV":"37.93","Stack O2":"3.21","Stack Temp":"408.9","Bridgewall Temp":"796","Ambient Temp":"16.0","Fuel Temp":"25.4"},{"Timestamp":"2026-02-05 12:00","Process Inlet Temp":"209.0","Process Outlet Temp":"352.2","Process Flow":"81650","Process Cp":"2.450","Fuel Gas Flow":"924.8","Fuel Gas LHV":"37.76","Stack O2":"3.40","Stack Temp":"402.3","Bridgewall Temp":"769","Ambient Temp":"13.8","Fuel Temp":"25.4"},{"Timestamp":"2026-02-05 18:00","Process Inlet Temp":"210.0","Process Outlet Temp":"350.2","Process Flow":"81520","Process Cp":"2.450","Fuel Gas Flow":"918.0","Fuel Gas LHV":"37.69","Stack O2":"2.82","Stack Temp":"407.9","Bridgewall Temp":"782","Ambient Temp":"15.8","Fuel Temp":"25.2"},{"Timestamp":"2026-02-06 00:00","Process Inlet Temp":"210.6","Process Outlet Temp":"350.2","Process Flow":"81380","Process Cp":"2.450","Fuel Gas Flow":"902.3","Fuel Gas LHV":"37.73","Stack O2":"3.43","Stack Temp":"405.6","Bridgewall Temp":"776","Ambient Temp":"16.8","Fuel Temp":"26.0"},{"Timestamp":"2026-02-06 06:00","Process Inlet Temp":"210.3","Process Outlet Temp":"351.8","Process Flow":"83023","Process Cp":"2.450","Fuel Gas Flow":"932.1","Fuel Gas LHV":"37.71","Stack O2":"3.19","Stack Temp":"410.5","Bridgewall Temp":"775","Ambient Temp":"15.0","Fuel Temp":"26.1"},{"Timestamp":"2026-02-06 12:00","Process Inlet Temp":"211.6","Process Outlet Temp":"347.5","Process Flow":"82529","Process Cp":"2.450","Fuel Gas Flow":"916.4","Fuel Gas LHV":"37.81","Stack O2":"3.32","Stack Temp":"402.2","Bridgewall Temp":"777","Ambient Temp":"17.5","Fuel Temp":"23.5"},{"Timestamp":"2026-02-06 18:00","Process Inlet Temp":"212.6","Process Outlet Temp":"349.2","Process Flow":"81375","Process Cp":"2.450","Fuel Gas Flow":"892.3","Fuel Gas LHV":"37.85","Stack O2":"2.79","Stack Temp":"408.8","Bridgewall Temp":"786","Ambient Temp":"18.0","Fuel Temp":"26.2"},{"Timestamp":"2026-02-07 00:00","Process Inlet Temp":"211.2","Process Outlet Temp":"353.8","Process Flow":"81098","Process Cp":"2.450","Fuel Gas Flow":"919.5","Fuel Gas LHV":"37.68","Stack O2":"3.40","Stack Temp":"399.9","Bridgewall Temp":"793","Ambient Temp":"12.6","Fuel Temp":"25.2"},{"Timestamp":"2026-02-07 06:00","Process Inlet Temp":"208.4","Process Outlet Temp":"346.0","Process Flow":"82512","Process Cp":"2.450","Fuel Gas Flow":"931.0","Fuel Gas LHV":"37.81","Stack O2":"3.41","Stack Temp":"406.2","Bridgewall Temp":"793","Ambient Temp":"13.0","Fuel Temp":"25.7"},{"Timestamp":"2026-02-07 12:00","Process Inlet Temp":"208.0","Process Outlet Temp":"349.4","Process Flow":"82442","Process Cp":"2.450","Fuel Gas Flow":"922.3","Fuel Gas LHV":"37.96","Stack O2":"3.12","Stack Temp":"408.4","Bridgewall Temp":"766","Ambient Temp":"15.5","Fuel Temp":"24.6"},{"Timestamp":"2026-02-07 18:00","Process Inlet Temp":"207.3","Process Outlet Temp":"350.5","Process Flow":"81800","Process Cp":"2.450","Fuel Gas Flow":"904.6","Fuel Gas LHV":"37.83","Stack O2":"3.33","Stack Temp":"410.1","Bridgewall Temp":"771","Ambient Temp":"16.2","Fuel Temp":"26.3"}];
+
+// ═══════════════════════════════════════════════════════
+// WIRING
+// ═══════════════════════════════════════════════════════
+
+// Tabs
+document.querySelectorAll(".tab").forEach(t=>t.addEventListener("click",()=>{document.querySelectorAll(".tab").forEach(x=>x.classList.remove("active"));document.querySelectorAll(".tab-panel").forEach(x=>x.classList.remove("active"));t.classList.add("active");document.getElementById("panel-"+t.dataset.tab).classList.add("active");}));
+
+// CSV upload
+document.getElementById("csvInput").addEventListener("change",e=>{const f=e.target.files[0];if(!f)return;document.getElementById("upStatus").textContent="Parsing...";Papa.parse(f,{header:true,skipEmptyLines:true,complete:r=>{currentRows=r.data;document.getElementById("upStatus").textContent=f.name+" · "+currentRows.length+" rows";runProcess();}});});
+
+// Demo button
+document.getElementById("loadDemoBtn").addEventListener("click",()=>{currentRows=DEMO_SERIES;document.getElementById("upStatus").textContent="Demo loaded · "+DEMO_SERIES.length+" rows";runProcess();});
+
+// Recalculate
+document.getElementById("recalcBtn").addEventListener("click",runProcess);
+document.querySelectorAll(".config-input").forEach(inp=>inp.addEventListener("change",runProcess));
+
+// Export
+document.getElementById("btnExport").addEventListener("click",()=>{if(!currentBatch||!currentBatch.processed.length)return;const hdrs=["Timestamp","Q_Abs_kW","Q_Fired_kW","eff_dir","eff_ind","Delta_pp","EA_pct","O2_pct","Stack_C","Bridge_C","Status"];const rows=currentBatch.processed.map(r=>{const ts=r.timestamp;return[`${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,"0")}-${String(ts.getDate()).padStart(2,"0")} ${String(ts.getHours()).padStart(2,"0")}:${String(ts.getMinutes()).padStart(2,"0")}`,fmt(r.qa,1),fmt(r.qf,1),fmt(r.eff_dir,2),fmt(r.eff_ind,2),fmt(r.eff_delta,2),fmt(r.ea,1),fmt(r.o2,2),fmt(r.tstk,1),fmt(r.tbw,0),r.status].join(",");});const csv=hdrs.join(",")+"\n"+rows.join("\n");const blob=new Blob([csv],{type:"text/csv"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="fired-heater-export.csv";a.click();});
+
+// Manual panel
+document.getElementById("btnManual").addEventListener("click",()=>{document.getElementById("manualPanel").classList.add("open");document.getElementById("manualOverlay").style.display="block";});
+document.getElementById("manualClose").addEventListener("click",()=>{document.getElementById("manualPanel").classList.remove("open");document.getElementById("manualOverlay").style.display="none";});
+document.getElementById("manualOverlay").addEventListener("click",()=>{document.getElementById("manualPanel").classList.remove("open");document.getElementById("manualOverlay").style.display="none";});
+
+// Auto-load demo
+currentRows=DEMO_SERIES;document.getElementById("upStatus").textContent="Demo auto-loaded · "+DEMO_SERIES.length+" rows";runProcess();
+
+document.getElementById("manualPdf").addEventListener("click",function(){
+  var body=document.querySelector(".manual-panel-body").innerHTML;
+  var win=window.open("","_blank");
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Engineering Manual — Fired Heater</title>'+
+    '<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">'+
+    '<style>body{font-family:\'IBM Plex Sans\',-apple-system,sans-serif;font-size:13px;line-height:1.7;color:#32302F;max-width:700px;margin:40px auto;padding:0 24px}'+
+    'h1{font-size:20px;font-weight:700;color:#463B33;border-bottom:2px solid #E29C57;padding-bottom:8px;margin-bottom:24px}'+
+    'h3{font-size:14px;font-weight:600;color:#763D16;margin:20px 0 8px}'+
+    'p{margin-bottom:10px}'+
+    'code{background:#F7F6F2;padding:2px 6px;border-radius:4px;font-family:\'IBM Plex Mono\',monospace;font-size:12px}'+
+    'strong{color:#463B33}'+
+    '@media print{body{margin:20px}@page{margin:1.5cm}}</style></head><body>'+
+    '<h1>Engineering Manual — Fired Heater</h1>'+body+'</body></html>');
+  win.document.close();
+  setTimeout(function(){win.print();},400);
+});
+</script>
+</body>
+</html>
