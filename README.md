@@ -1,6 +1,6 @@
-# ChemDash — Chemical Engineering Dashboards
+# Ferriq - Chemical Engineering Dashboards
 
-A set of proof-of-concept monitoring dashboards for industrial process equipment. Built as self-contained, single-file HTML pages — no server, no database, no build step. Open in any modern browser.
+A set of proof-of-concept monitoring dashboards for industrial process equipment. Built as self-contained, single-file HTML pages - no server, no database, no build step. Open in any modern browser.
 
 ## Dashboards
 
@@ -15,15 +15,15 @@ A set of proof-of-concept monitoring dashboards for industrial process equipment
 
 ## Live Site
 
-Published via GitHub Pages at: `https://vedantpatel699.github.io/chemdash/`
+Published via GitHub Pages at: `https://vedantpatel699.github.io/Ferriq/`
 
 ## Design System
 
 - **Typography**: IBM Plex Sans (UI) + IBM Plex Mono (data values)
-- **Style**: HPHMI / ISA-101 gray-default philosophy — color reserved for abnormal states
+- **Style**: HPHMI / ISA-101 gray-default philosophy - color reserved for abnormal states
 - **Layout**: Sidebar (180px) + topbar (56px) + scrollable content area
 - **Cards**: Outlined style with 16px radius, dual-layer drop shadow
-- **Status**: Green (normal), Amber (advisory), Red (critical) — always paired with glyph + text
+- **Status**: Green (normal), Amber (advisory), Red (critical) - always paired with glyph + text
 - **Charts**: Chart.js 4.4.1 via CDN, Papa Parse 5.4.1 for CSV upload
 
 ## Features (per model dashboard)
@@ -42,4 +42,4 @@ Open `index.html` (redirects to the home page) or any individual dashboard file 
 
 ## License
 
-Proprietary — not for redistribution.
+Proprietary - not for redistribution.

@@ -1,4 +1,4 @@
-# Furnace Tube Skin-Temperature Predictor — Backend Technical Manual
+# Furnace Tube Skin-Temperature Predictor - Backend Technical Manual
 
 **Version:** 1.0  
 **Date:** 2026-04-04  
@@ -48,11 +48,11 @@ $$\Delta T_i = K_i \cdot \left(\frac{Q_{\mathrm{fire}}}{Q_{\mathrm{ref}}}\right)
 
 Where:
 
-- **$K_i$** — Baseline temperature rise at reference conditions (MW, kg/h), calibrated per position. Units: K.
-- **$Q_{\mathrm{fire}}$** — Actual furnace heat release (MW)
-- **$Q_{\mathrm{ref}}$** — Reference heat release = 25 MW
-- **$m$** — Actual process mass flow rate (kg/h)
-- **$m_{\mathrm{ref}}$** — Reference flow rate = 80,000 kg/h
+- **$K_i$** - Baseline temperature rise at reference conditions (MW, kg/h), calibrated per position. Units: K.
+- **$Q_{\mathrm{fire}}$** - Actual furnace heat release (MW)
+- **$Q_{\mathrm{ref}}$** - Reference heat release = 25 MW
+- **$m$** - Actual process mass flow rate (kg/h)
+- **$m_{\mathrm{ref}}$** - Reference flow rate = 80,000 kg/h
 - **Exponents:** 0.8 / 0.8 empirical for single-tube convection + radiation balance
 
 ### 3.2 Predicted Skin Temperature
@@ -62,7 +62,7 @@ $$T_{\mathrm{pred}, i} = T_{\mathrm{process}} + \Delta T_i$$
 Where:
 
 - **$T_{\mathrm{process}}$** = `process_t_c` (°C)
-- **$T_{\mathrm{pred}, i}$** — Predicted skin temperature at position *i* (°C)
+- **$T_{\mathrm{pred}, i}$** - Predicted skin temperature at position *i* (°C)
 
 ### 3.3 Residual (Prediction Error)
 
@@ -71,7 +71,7 @@ $$\varepsilon_i = T_{\mathrm{meas}, i} - T_{\mathrm{pred}, i}$$
 Where:
 
 - **$T_{\mathrm{meas}, i}$** = `skin_t{i}_c` (°C)
-- **$\varepsilon_i$** — Residual error (°C). Positive = fouling/insulation gain. Negative = coking/sensor drift/measurement lag.
+- **$\varepsilon_i$** - Residual error (°C). Positive = fouling/insulation gain. Negative = coking/sensor drift/measurement lag.
 
 **Residual flag:** If $|\varepsilon_i| > 5$ K, mark as drift/anomaly.
 
@@ -92,9 +92,9 @@ Each measured temperature at position *i* is assigned a **risk state** based on 
 **Tube material:** 9Cr-1Mo (T91), typical refinery convection-bank tube (SA-213 T91).
 
 **Standard references:**
-- **ASME PTC-4.4** — Steam generator performance (TMT monitoring)
-- **NACE SP0170-2016** — Corrosion/creep metallurgy (9Cr-1Mo in H₂/CO₂)
-- **API 530 (2021 ed.)** — Design, fabrication, operation of heaters for refinery service
+- **ASME PTC-4.4** - Steam generator performance (TMT monitoring)
+- **NACE SP0170-2016** - Corrosion/creep metallurgy (9Cr-1Mo in H₂/CO₂)
+- **API 530 (2021 ed.)** - Design, fabrication, operation of heaters for refinery service
 
 ---
 
@@ -235,10 +235,10 @@ def process(row: dict) -> dict:
 **Purpose:** Render Chart.js trend charts.
 
 **Parameters:**
-- `data` — List of processed rows
-- `canvas_ids` — Dict mapping series name to canvas element ID
-  - `canvas_ids['T1']`, `canvas_ids['T2']`, etc. — Per-position time-series
-  - `canvas_ids['predicted_vs_measured']` — Prediction accuracy (scatter or dual-axis)
+- `data` - List of processed rows
+- `canvas_ids` - Dict mapping series name to canvas element ID
+  - `canvas_ids['T1']`, `canvas_ids['T2']`, etc. - Per-position time-series
+  - `canvas_ids['predicted_vs_measured']` - Prediction accuracy (scatter or dual-axis)
 
 ---
 
@@ -273,7 +273,7 @@ Triggered when any position reaches **Advisory** or above:
   - Trip → immediate shutdown
   - Alarm → escalate to operations (creep initiation)
   - Advisory → increase monitoring frequency
-- **Message:** "Position {i}: {state} ({T_meas:.1f}°C) — {action}"
+- **Message:** "Position {i}: {state} ({T_meas:.1f}°C) - {action}"
 
 ### 7.2 Residual Drift Alert
 
@@ -281,7 +281,7 @@ Triggered when prediction error exceeds threshold:
 
 - **Condition:** $|\varepsilon_i| > 5$ K for position *i*
 - **Priority:** Advisory (investigate, but not immediately dangerous)
-- **Message:** "Position {i}: Residual drift {ε_i:.1f}K — check thermowell, fouling, or model calibration"
+- **Message:** "Position {i}: Residual drift {ε_i:.1f}K - check thermowell, fouling, or model calibration"
 
 ### 7.3 System-Level Banner
 
@@ -444,13 +444,13 @@ All six parameters (Q_ref, m_ref, K values, T limits, residual threshold) are ex
 
 ## Appendix B: Standard References (Full Citations)
 
-1. **ASME PTC 4.4:2017** — Power Test Code — Steam Generators. Section 3: Performance Tests (Indirect, once-through); Section 8: Thermocouple Measurement & Uncertainty.
+1. **ASME PTC 4.4:2017** - Power Test Code - Steam Generators. Section 3: Performance Tests (Indirect, once-through); Section 8: Thermocouple Measurement & Uncertainty.
 
-2. **NACE SP0170-2016** — Protection of Austenitic Stainless Steel and Other Corrosion-Resistant Alloys from Pitting and Crevice Corrosion in Chloride-Containing Environments. (Applies 9Cr-1Mo creep limits in H₂ service.)
+2. **NACE SP0170-2016** - Protection of Austenitic Stainless Steel and Other Corrosion-Resistant Alloys from Pitting and Crevice Corrosion in Chloride-Containing Environments. (Applies 9Cr-1Mo creep limits in H₂ service.)
 
-3. **API 530:2021** — Calculation of Heater-Tube Thickness in Petroleum Refineries. 3rd ed. Section 4: Design Temperature and Pressure; Section 9: Creep-Rupture Rate (Larson-Miller).
+3. **API 530:2021** - Calculation of Heater-Tube Thickness in Petroleum Refineries. 3rd ed. Section 4: Design Temperature and Pressure; Section 9: Creep-Rupture Rate (Larson-Miller).
 
-4. **ASTM E0111-21** — Standard Test Method for Young's Modulus, Tangent Modulus, and Chord Modulus. (Background for 9Cr-1Mo mechanical properties.)
+4. **ASTM E0111-21** - Standard Test Method for Young's Modulus, Tangent Modulus, and Chord Modulus. (Background for 9Cr-1Mo mechanical properties.)
 
 5. **Dittus, F. W.; Boelert, L. M. K. (1930)**. "Heat Transfer in Automobile Radiators of Tubular Type." *University of California Publications in Engineering*, vol. 2, pp. 443–461. (Original correlation; 0.8/0.8 exponents.)
 

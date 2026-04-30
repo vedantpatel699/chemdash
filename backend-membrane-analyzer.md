@@ -1,4 +1,4 @@
-# H₂-Recovery Membrane Analyzer — Backend Technical Manual
+# H₂-Recovery Membrane Analyzer - Backend Technical Manual
 
 **Version:** 1.0  
 **Date:** 2026-04-04  
@@ -380,25 +380,25 @@ def evaluateAlerts(row_result):
     
     # Permeance alerts
     if row_result['permeance_norm'] < 90:
-        alerts.append("ALARM: Permeance drop >10% — CIP or replacement needed")
+        alerts.append("ALARM: Permeance drop >10% - CIP or replacement needed")
     elif row_result['permeance_norm'] < 95:
-        alerts.append("ADVISORY: Permeance drop >5% — monitor fouling")
+        alerts.append("ADVISORY: Permeance drop >5% - monitor fouling")
     
     # Purity alerts
     if row_result['permeance_h2_pct'] < 91:
-        alerts.append("ALARM: H₂ purity <91% — membrane integrity issue")
+        alerts.append("ALARM: H₂ purity <91% - membrane integrity issue")
     elif row_result['permeance_h2_pct'] < 93:
-        alerts.append("ADVISORY: H₂ purity <93% — feed or defect?")
+        alerts.append("ADVISORY: H₂ purity <93% - feed or defect?")
     
     # Recovery alerts
     if row_result['recovery'] < 70:
-        alerts.append("ALARM: H₂ recovery <70% — primary loss")
+        alerts.append("ALARM: H₂ recovery <70% - primary loss")
     elif row_result['recovery'] < 75:
-        alerts.append("ADVISORY: H₂ recovery <75% — check operating point")
+        alerts.append("ADVISORY: H₂ recovery <75% - check operating point")
     
     # Material balance alerts
     if abs(row_result['mb_gap']) > 3:
-        alerts.append(f"ADVISORY: MB gap {row_result['mb_gap']:+.1f}% — meter calibration?")
+        alerts.append(f"ADVISORY: MB gap {row_result['mb_gap']:+.1f}% - meter calibration?")
     
     return alerts
 ```
@@ -609,7 +609,7 @@ The HTML dashboard includes an embedded `<script>` tag that:
 3. Populates KPI tiles (stage cut, recovery, selectivity, permeance, alerts)
 4. Feeds time-series data to Chart.js trend plots
 
-**Alternative:** Pure JavaScript port of the engine (no Python dependency) — see `membrane-analyzer/engine.js`.
+**Alternative:** Pure JavaScript port of the engine (no Python dependency) - see `membrane-analyzer/engine.js`.
 
 ### 9.3 Data Persistence
 
@@ -635,7 +635,7 @@ The HTML dashboard includes an embedded `<script>` tag that:
 2. Wijmans, J. G., & Baker, R. W. (1995). "The solution-diffusion model: a review." *Journal of Membrane Science*, 107(1–2), 1–21.
    - Fundamental transport model; driving-pressure definitions.
 
-3. ISO 4014:1998. *Gas cylinders — Safety devices for compressed gas cylinders — Selection and installation.*
+3. ISO 4014:1998. *Gas cylinders - Safety devices for compressed gas cylinders - Selection and installation.*
    - Normal (STP) conditions: 0°C, 1.013 bar.
 
 4. THEME (Tubular Exchanger Manufacturers Association). *Standards of the Tubular Exchanger Manufacturers Association*, 9th ed.

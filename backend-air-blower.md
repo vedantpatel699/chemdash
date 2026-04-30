@@ -3,7 +3,7 @@
 **Version:** 1.0  
 **Date:** 2026-04-04  
 **Author:** Vedant Patel  
-**Classification:** CONFIDENTIAL — INTERNAL USE ONLY
+**Classification:** CONFIDENTIAL - INTERNAL USE ONLY
 
 This is the definitive backend reference for the air blower model. It is not linked from the public site but is version-controlled in the git repository for review and auditing.
 
@@ -14,12 +14,12 @@ This is the definitive backend reference for the air blower model. It is not lin
 The air blower model monitors the **performance and mechanical health** of a dual-train centrifugal air blower (Blowers A and B, one active at a time) driven by a 3-phase induction motor.
 
 **Computed per timestamp:**
-- Electrical shaft power (kW) — IEEE/NEMA 3-phase
+- Electrical shaft power (kW) - IEEE/NEMA 3-phase
 - Pressure ratio and differential pressure (bar absolute)
 - Three efficiency methods:
-  - **Polytropic** — headline KPI; industry-standard per ASME PTC 10 §5.4a
-  - **Isentropic** — adiabatic comparison per ASME PTC 10 §5.4
-  - **Fluid-power** — incompressible-flow indicator only (non-thermodynamic)
+  - **Polytropic** - headline KPI; industry-standard per ASME PTC 10 §5.4a
+  - **Isentropic** - adiabatic comparison per ASME PTC 10 §5.4
+  - **Fluid-power** - incompressible-flow indicator only (non-thermodynamic)
 - Maximum vibration across 4 probes per train (mm/s RMS)
 - Maximum bearing temperature across 2 probes per train (°C)
 - Tiered alerts (Advisory / Alarm / Trip) with cited limits
@@ -31,13 +31,13 @@ The air blower model monitors the **performance and mechanical health** of a dua
 
 ---
 
-## 2. Tag Dictionary — Full Data Contract
+## 2. Tag Dictionary - Full Data Contract
 
 The engine accepts **29 input variables** via a standardized dict interface. Both snake_case canonical names and original CSV headers are valid aliases. Implementers who wire this to a historian (Aveva PI, OPC-UA, SQL, etc.) map each historian tag to a canonical engine variable at the boundary.
 
 | # | Canonical Variable | CSV Alias | Unit | Required | Typical Range | Fallback Rule |
 |---|---|---|---|---|---|---|
-| 1 | `timestamp` | Date | ISO-8601 | yes | — | drop row if unparseable |
+| 1 | `timestamp` | Date | ISO-8601 | yes | - | drop row if unparseable |
 | 2 | `motor_current_a` | Motor Current A | A | yes | 0–250 | drop row |
 | 3 | `motor_current_b` | Motor Current B | A | yes | 0–250 | drop row |
 | 4 | `suction_pressure_a` | Suction Press A | kPaa | yes (if A active) | 90–125 | drop row |
@@ -457,7 +457,7 @@ DEFAULT_LIMITS = {
 
 ---
 
-## 6. Alert Logic — Complete Tiered Rules
+## 6. Alert Logic - Complete Tiered Rules
 
 The alert engine implements **tiered advisories** aligned with industrial best practice (ISA-101 / HPHMI gray-default). Each alert has a severity, message, and source citation.
 
@@ -467,7 +467,7 @@ The alert engine implements **tiered advisories** aligned with industrial best p
 
 | Condition | Severity | Threshold | Zone | Action |
 |-----------|----------|-----------|------|--------|
-| vib_max < 4.5 | — | — | A–B | OK (normal) |
+| vib_max < 4.5 | - | - | A–B | OK (normal) |
 | 4.5 ≤ vib_max < 7.1 | **advisory** | 4.5 mm/s | B/C boundary | Monitor |
 | 7.1 ≤ vib_max < 11.0 | **alarm** | 7.1 mm/s | C/D boundary | Investigate soon |
 | 11.0 ≤ vib_max | **trip** | 11.0 mm/s | D | Shutdown recommended |
@@ -484,7 +484,7 @@ Vibration {vib_max:.2f} mm/s [exceeds | above] [trip limit 11.0 | alarm limit 7.
 
 | Condition | Severity | Threshold | Action |
 |-----------|----------|-----------|--------|
-| brg_max < 70.0 | — | — | OK (normal) |
+| brg_max < 70.0 | - | - | OK (normal) |
 | 70.0 ≤ brg_max < 85.0 | **advisory** | 70 °C | Monitor; check cooling |
 | 85.0 ≤ brg_max < 95.0 | **alarm** | 85 °C | Investigate soon; reduce load |
 | 95.0 ≤ brg_max | **trip** | 95 °C | Shutdown recommended |
@@ -536,7 +536,7 @@ Bearing temperature {brg_max:.1f} C [exceeds | above] [trip limit 95 | alarm lim
 
 ---
 
-## 7. Data Schema — demo.csv
+## 7. Data Schema - demo.csv
 
 The reference dataset spans **28 rows** (rows 2–29 of the CSV; row 1 is headers) from **2021-12-22 04:00 to 2026-01-24 08:00** (note: date range spans multiple months; see data/demo.csv for full extent).
 
@@ -578,19 +578,19 @@ Suction Temp:       (blank → default 4.0 °C)
 
 **Settings:** V = 4000 V, PF = 0.85, P_atm = 0.93 bar, k = 1.40.
 
-**Step 1 — Shaft power (§3.1):**
+**Step 1 - Shaft power (§3.1):**
 $$P_{\text{elec}} = \frac{\sqrt{3} \times 4000 \times 114.42 \times 0.85}{1000} = 673.82 \text{ kW}$$
 
-**Step 2 — Pressure normalization (§3.2):**
+**Step 2 - Pressure normalization (§3.2):**
 $$P_1 = 120.18 / 100 = 1.2018 \text{ bar abs}$$
 $$P_2 = 92.01 / 100 + 0.93 = 1.8501 \text{ bar abs}$$
 $$\Delta P = 0.6483 \text{ bar}, \quad r = P_2 / P_1 = 1.5394$$
 
-**Step 3 — Fluid power (§3.3):**
+**Step 3 - Fluid power (§3.3):**
 $$P_{\text{fluid}} = 20,049.42 \times 0.6483 / 36 = 361.06 \text{ kW}$$
 $$\eta_{\text{fluid}} = 361.06 / 673.82 \times 100\% = 53.58\%$$
 
-**Step 4 — Isentropic efficiency (§3.4):**
+**Step 4 - Isentropic efficiency (§3.4):**
 $$T_1 = 4.0 + 273.15 = 277.15 \text{ K}$$
 $$T_2 = 74.0 + 273.15 = 347.15 \text{ K}$$
 $$(P_2/P_1)^{(k-1)/k} = 1.5394^{0.2857} = 1.1312$$
@@ -598,13 +598,13 @@ $$\text{ideal } \Delta T = 277.15 \times (1.1312 - 1) = 36.37 \text{ K}$$
 $$\text{actual } \Delta T = 347.15 - 277.15 = 70.00 \text{ K}$$
 $$\eta_s = 36.37 / 70.00 \times 100\% = 51.94\%$$
 
-**Step 5 — Polytropic efficiency (§3.5):**
+**Step 5 - Polytropic efficiency (§3.5):**
 $$\sigma = \ln(347.15 / 277.15) / \ln(1.5394) = 0.2252 / 0.4317 = 0.5217$$
 $$\eta_p = (0.2857 / 0.5217) \times 100\% = 54.74\%$$
 
 **Consistency check:** η_p (54.74 %) > η_isen (51.94 %) ✓ (thermodynamically sound for a compressor)
 
-**Step 6 — Alerts:**
+**Step 6 - Alerts:**
 - **Vibration:** max(0.06, 0.04, 0.77, 0.77) = 0.77 mm/s < 4.5 mm/s → **OK**
 - **Bearing temp:** max(54.39, 68.29) = 68.29 °C < 70.0 °C → **OK**
 - **Blower ΔP:** 0.6483 bar > 0.45 bar → **ADVISORY: possible internal fouling**
@@ -632,7 +632,7 @@ $$\eta_p = (0.2857 / 0.5217) \times 100\% = 54.74\%$$
 
 ---
 
-## 10. Integration Notes — Historian Boundary
+## 10. Integration Notes - Historian Boundary
 
 The engine reads plain Python dicts. For a live historian integration, the implementer who wires this to Aveva PI, OPC-UA, SQL, or a real-time database should:
 
@@ -673,4 +673,4 @@ The engine reads plain Python dicts. For a live historian integration, the imple
 
 ---
 
-**Document end.** For implementation support or technical questions, contact the ChemDash maintainer.
+**Document end.** For implementation support or technical questions, contact the Ferriq maintainer.

@@ -1,4 +1,4 @@
-# Fired Heater Efficiency — Backend Technical Manual
+# Fired Heater Efficiency - Backend Technical Manual
 
 **Version:** 1.0  
 **Date:** 2026-04-04  
@@ -9,7 +9,7 @@
 
 ## 1. Purpose & Scope
 
-This manual documents the **dual-method efficiency calculation engine** for the ChemDash Fired Heater dashboard. The heater model computes thermal efficiency via two independent paths:
+This manual documents the **dual-method efficiency calculation engine** for the Ferriq Fired Heater dashboard. The heater model computes thermal efficiency via two independent paths:
 
 1. **Direct Method** (QProcess Absorption)  
    Thermal energy delivered to the process fluid, divided by fuel energy input.
@@ -36,16 +36,16 @@ The difference between direct and indirect (η_direct − η_indirect) serves as
 
 | Tag | Description | Units | Type | Fallback | Notes |
 |-----|-------------|-------|------|----------|-------|
-| `timestamp` | ISO 8601 datetime | — | Text | — | Required, UTC or local per config |
-| `process_inlet_c` | Process fluid inlet temperature | °C | Float | — | Thermowell at heater inlet |
-| `process_outlet_c` | Process fluid outlet temperature | °C | Float | — | Thermowell at heater outlet |
-| `process_flow_kghr` | Mass flow rate of process fluid | kg/h | Float | — | Coriolis or mag-meter |
-| `process_cp_kjkgk` | Specific heat of process fluid | kJ/(kg·K) | Float | — | Look-up per fluid type & T_avg |
-| `fuel_flow_nm3hr` | Fuel (gas) volumetric flow at STP | Nm³/h | Float | — | Orifice meter, compensated to STP |
+| `timestamp` | ISO 8601 datetime | - | Text | - | Required, UTC or local per config |
+| `process_inlet_c` | Process fluid inlet temperature | °C | Float | - | Thermowell at heater inlet |
+| `process_outlet_c` | Process fluid outlet temperature | °C | Float | - | Thermowell at heater outlet |
+| `process_flow_kghr` | Mass flow rate of process fluid | kg/h | Float | - | Coriolis or mag-meter |
+| `process_cp_kjkgk` | Specific heat of process fluid | kJ/(kg·K) | Float | - | Look-up per fluid type & T_avg |
+| `fuel_flow_nm3hr` | Fuel (gas) volumetric flow at STP | Nm³/h | Float | - | Orifice meter, compensated to STP |
 | `fuel_lhv_mjnm3` | Lower Heating Value of fuel | MJ/Nm³ | Float | 47.5 (nat gas) | Via gas chromatography or assume |
-| `stack_o2_pct` | Flue gas O₂ concentration | % vol | Float | — | Electrochemical cell, wet basis |
-| `stack_temp_c` | Stack outlet temperature | °C | Float | — | Thermowell, below APH if present |
-| `bridgewall_temp_c` | Bridgewall (flame zone) temperature | °C | Float | — | Estimated via radiant tube wall IR or thermocouple |
+| `stack_o2_pct` | Flue gas O₂ concentration | % vol | Float | - | Electrochemical cell, wet basis |
+| `stack_temp_c` | Stack outlet temperature | °C | Float | - | Thermowell, below APH if present |
+| `bridgewall_temp_c` | Bridgewall (flame zone) temperature | °C | Float | - | Estimated via radiant tube wall IR or thermocouple |
 | `ambient_temp_c` | Ambient air temperature | °C | Float | 15 | Dry-bulb at heater location |
 | `fuel_temp_c` | Fuel inlet temperature | °C | Float | 25 | Gas temp at heater burner inlet |
 
@@ -67,7 +67,7 @@ The difference between direct and indirect (η_direct − η_indirect) serves as
 Q_abs [kW] = m_process [kg/h] × Cp [kJ/(kg·K)] × (T_out − T_in [K]) / 3600 [s/h]
 ```
 
-**Source:** API 560 §5.4 — Fired Heaters for Refinery Service
+**Source:** API 560 §5.4 - Fired Heaters for Refinery Service
 
 **Notes:**
 - Temperature difference in **Kelvin** (ΔK = ΔC, no offset).
@@ -118,7 +118,7 @@ Q_fired [kW] = V_fuel [Nm³/h] × LHV [MJ/Nm³] × 1000 [kJ/MJ] / 3600 [s/h]
 EA [%] = 100 × O₂_dry / (20.95 − O₂_dry)
 ```
 
-**Source:** ASME PTC 4 Appendix A — Standard Method for Combustion Efficiency Testing
+**Source:** ASME PTC 4 Appendix A - Standard Method for Combustion Efficiency Testing
 
 **Notes:**
 - **O₂_dry** = O₂ measured in flue gas, adjusted to dry basis:
@@ -141,7 +141,7 @@ EA [%] = 100 × O₂_dry / (20.95 − O₂_dry)
 
 ---
 
-### 3.5 Lower Heating Value — Conversion to Basis of kg Fuel
+### 3.5 Lower Heating Value - Conversion to Basis of kg Fuel
 
 **Equation:**
 ```
@@ -161,14 +161,14 @@ LHV [kJ/kg] = LHV_MJ_Nm3 [MJ/Nm³] × 1000 [kJ/MJ] × 22.414 [L/mol] / MW_fuel [
 
 ---
 
-### 3.6 Indirect Efficiency — Stack-Up of Losses
+### 3.6 Indirect Efficiency - Stack-Up of Losses
 
 **Equation:**
 ```
 η_indirect [%] = 100 − L_dry − L_moist − L_rad − L_unacc
 ```
 
-**Source:** ASME PTC 4 — Standard for Evaluation of Flue-Gas Losses in Boilers and Furnaces
+**Source:** ASME PTC 4 - Standard for Evaluation of Flue-Gas Losses in Boilers and Furnaces
 
 **Notes:**
 - Each loss term is in **percentage points** (0–100).
@@ -189,7 +189,7 @@ L_dry [pp] = (m_dry_fg [kg/s] × Cp_fg [kJ/(kg·K)] × (T_stk − T_amb [K])) / 
 L_dry [pp] = (m_O2_stoich + m_N2_stoich + m_CO2_prod) [kg/kg_fuel] × Cp_dry [kJ/(kg·K)] × ΔT / LHV [kJ/kg] × 100
 ```
 
-**Source:** ASME PTC 4 §5.2 — Sensible Heat of Flue Gas
+**Source:** ASME PTC 4 §5.2 - Sensible Heat of Flue Gas
 
 **Notes:**
 - **m_dry_fg:** total mass of dry flue gas (O₂ + N₂ + CO₂ + Ar, no H₂O) per kg fuel burned.
@@ -219,7 +219,7 @@ L_dry [pp] = (m_O2_stoich + m_N2_stoich + m_CO2_prod) [kg/kg_fuel] × Cp_dry [kJ
 L_moist [pp] = (m_H2O [kg/kg_fuel] × Cp_v [kJ/(kg·K)] × (T_stk − T_fuel [K])) / LHV [kJ/kg] × 100
 ```
 
-**Source:** ASME PTC 4 §5.3 — Sensible Heat of Water Vapor in Flue Gas
+**Source:** ASME PTC 4 §5.3 - Sensible Heat of Water Vapor in Flue Gas
 
 **Notes:**
 - **LHV basis:** The LHV already subtracts the latent heat of vaporization (≈2256 kJ/kg water at 100°C).
@@ -271,7 +271,7 @@ L_rad [pp] = config.radiation_loss_percent
 L_unacc [pp] = config.unaccounted_loss_percent
 ```
 
-**Source:** ASME PTC 4 §5.5 — Unmeasured/Unmeasurable Losses
+**Source:** ASME PTC 4 §5.5 - Unmeasured/Unmeasurable Losses
 
 **Notes:**
 - Accounts for:
@@ -621,11 +621,11 @@ const DEFAULT_LIMITS = {
 
 | Condition | Severity | Message |
 |-----------|----------|---------|
-| T_stack < 200°C | ADVISORY | "Stack temp low — check draft, inspect chimney" |
-| T_stack 200–400°C | ADVISORY | "Stack temp moderate — fouling possible" |
-| T_stack 400–450°C | NORMAL | — |
-| T_stack 450–500°C | ADVISORY | "Stack temp elevated — combustion drift or low excess air?" |
-| T_stack > 500°C | ALARM | "Stack temp critical — check fuel/air ratio, inspect for soot" |
+| T_stack < 200°C | ADVISORY | "Stack temp low - check draft, inspect chimney" |
+| T_stack 200–400°C | ADVISORY | "Stack temp moderate - fouling possible" |
+| T_stack 400–450°C | NORMAL | - |
+| T_stack 450–500°C | ADVISORY | "Stack temp elevated - combustion drift or low excess air?" |
+| T_stack > 500°C | ALARM | "Stack temp critical - check fuel/air ratio, inspect for soot" |
 
 ---
 
@@ -633,11 +633,11 @@ const DEFAULT_LIMITS = {
 
 | Condition | Severity | Message |
 |-----------|----------|---------|
-| T_bw < 750°C | ADVISORY | "Bridgewall low — flame not fully established" |
-| T_bw 750–830°C | ADVISORY | "Bridgewall below target — improve burner or fuel atomization" |
-| T_bw 830–900°C | NORMAL | — |
-| T_bw 900–950°C | ADVISORY | "Bridgewall elevated — tube creep risk, reduce fuel flow or increase air" |
-| T_bw > 950°C | ALARM | "Bridgewall critical — immediate reduction required" |
+| T_bw < 750°C | ADVISORY | "Bridgewall low - flame not fully established" |
+| T_bw 750–830°C | ADVISORY | "Bridgewall below target - improve burner or fuel atomization" |
+| T_bw 830–900°C | NORMAL | - |
+| T_bw 900–950°C | ADVISORY | "Bridgewall elevated - tube creep risk, reduce fuel flow or increase air" |
+| T_bw > 950°C | ALARM | "Bridgewall critical - immediate reduction required" |
 
 ---
 
@@ -645,11 +645,11 @@ const DEFAULT_LIMITS = {
 
 | Condition | Severity | Message |
 |-----------|----------|---------|
-| EA < 2%  | ALARM | "Excess air very low — CO production likely, unstable flame" |
-| EA 2–15% | ADVISORY | "Excess air lean — confirm flame stability, monitor for CO" |
-| EA 15–25% | NORMAL | — |
-| EA 25–40% | ADVISORY | "Excess air high — efficiency loss, check burner adjustment" |
-| EA > 40% | ALARM | "Excess air critical — over-fire, energy waste" |
+| EA < 2%  | ALARM | "Excess air very low - CO production likely, unstable flame" |
+| EA 2–15% | ADVISORY | "Excess air lean - confirm flame stability, monitor for CO" |
+| EA 15–25% | NORMAL | - |
+| EA 25–40% | ADVISORY | "Excess air high - efficiency loss, check burner adjustment" |
+| EA > 40% | ALARM | "Excess air critical - over-fire, energy waste" |
 
 ---
 
@@ -657,7 +657,7 @@ const DEFAULT_LIMITS = {
 
 | Condition | Severity | Message |
 |-----------|----------|---------|
-| O₂_pct < 2.0% | ALARM | "O₂ very low — CO and incomplete combustion risk" |
+| O₂_pct < 2.0% | ALARM | "O₂ very low - CO and incomplete combustion risk" |
 
 ---
 
@@ -665,8 +665,8 @@ const DEFAULT_LIMITS = {
 
 | Condition | Severity | Message |
 |-----------|----------|---------|
-| m_process = 0 or null | ALARM | "No process flow — heater idle" |
-| m_process < 0 | ALARM | "Process flow negative — instrument error" |
+| m_process = 0 or null | ALARM | "No process flow - heater idle" |
+| m_process < 0 | ALARM | "Process flow negative - instrument error" |
 
 ---
 
@@ -674,7 +674,7 @@ const DEFAULT_LIMITS = {
 
 | Condition | Severity | Message |
 |-----------|----------|---------|
-| T_inlet ≥ T_outlet | ALARM | "Process inlet ≥ outlet — Q_abs invalid, check thermowells" |
+| T_inlet ≥ T_outlet | ALARM | "Process inlet ≥ outlet - Q_abs invalid, check thermowells" |
 
 ---
 
@@ -683,19 +683,19 @@ const DEFAULT_LIMITS = {
 **If method = "direct":**
 | Condition | Severity | Message |
 |-----------|----------|---------|
-| η_direct < 78% | ADVISORY | "Direct efficiency low — fouling or process mismatch?" |
-| η_direct < 75% | ALARM | "Direct efficiency critical — immediate cleaning recommended" |
+| η_direct < 78% | ADVISORY | "Direct efficiency low - fouling or process mismatch?" |
+| η_direct < 75% | ALARM | "Direct efficiency critical - immediate cleaning recommended" |
 
 **If method = "indirect":**
 | Condition | Severity | Message |
 |-----------|----------|---------|
-| η_indirect < 78% | ADVISORY | "Indirect efficiency low — fouling or combustion drift" |
-| η_indirect < 75% | ALARM | "Indirect efficiency critical — cleaning/service required" |
+| η_indirect < 78% | ADVISORY | "Indirect efficiency low - fouling or combustion drift" |
+| η_indirect < 75% | ALARM | "Indirect efficiency critical - cleaning/service required" |
 
 **If method = "both":**
 | Condition | Severity | Message |
 |-----------|----------|---------|
-| \|η_direct − η_indirect\| > 8 pp | ADVISORY | "Efficiency gap large — fouling, air/fuel imbalance, or measurement drift" |
+| \|η_direct − η_indirect\| > 8 pp | ADVISORY | "Efficiency gap large - fouling, air/fuel imbalance, or measurement drift" |
 
 ---
 
@@ -913,7 +913,7 @@ gap = η_direct − η_indirect
 - Direct efficiency 51.68% is very low, suggesting large process mismatch or measurement error.
 - Indirect efficiency 83.97% is reasonable for stack conditions.
 - Large negative gap (−32 pp) flags a major discrepancy: either Q_abs measurement is wrong, or fuel/air balance is off.
-- **Alert:** "Efficiency gap large — fouling, air/fuel imbalance, or measurement drift."
+- **Alert:** "Efficiency gap large - fouling, air/fuel imbalance, or measurement drift."
 
 ---
 
@@ -975,7 +975,7 @@ gap = 58.9 − 83.74 = −24.84 pp
 4. Process flow or ΔT sensor reads low.
 5. Bypass or leakage around the heater (not in process flow).
 
-**Alert generated:** Advisory — "Efficiency gap large — investigate fuel flow meter, process Cp, or potential bypass."
+**Alert generated:** Advisory - "Efficiency gap large - investigate fuel flow meter, process Cp, or potential bypass."
 
 ---
 
@@ -1183,11 +1183,11 @@ If integrating with a live DCS (Honeywell, ABB, Emerson):
 
 | Standard | Section | Title | Reference |
 |----------|---------|-------|-----------|
-| **API 560** | §5.4 | Performance Measurement — Fired Heaters | Direct efficiency, Q_abs, Q_fired |
-| **ASME PTC 4** | App. A | Combustion Efficiency — O₂ to Excess Air | EA calculation |
-| **ASME PTC 4** | §5.2–5.5 | Stack Losses — Direct Method | Dry gas, moisture, radiation, unaccounted |
-| **ISO 5167** | Part 1–4 | Measurement of Fluid Flow — Orifice Plates | Flow measurement (referenced in tag notes) |
-| **ISO 1783** | — | Gas fuels — Guidance on measurement methods | STP, measurement temperature corrections |
+| **API 560** | §5.4 | Performance Measurement - Fired Heaters | Direct efficiency, Q_abs, Q_fired |
+| **ASME PTC 4** | App. A | Combustion Efficiency - O₂ to Excess Air | EA calculation |
+| **ASME PTC 4** | §5.2–5.5 | Stack Losses - Direct Method | Dry gas, moisture, radiation, unaccounted |
+| **ISO 5167** | Part 1–4 | Measurement of Fluid Flow - Orifice Plates | Flow measurement (referenced in tag notes) |
+| **ISO 1783** | - | Gas fuels - Guidance on measurement methods | STP, measurement temperature corrections |
 | **TEMA** | Type S | Tubular Exchanger Manufacturers Assoc. | Referenced for shell-tube comparison |
 
 ---

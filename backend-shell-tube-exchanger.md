@@ -1,4 +1,4 @@
-# Shell & Tube Heat Exchanger — Backend Technical Manual
+# Shell & Tube Heat Exchanger - Backend Technical Manual
 
 **Version:** 1.0  
 **Date:** 2026-04-04  
@@ -28,7 +28,7 @@ The exchanger accepts eleven (11) process tags as inputs. All are required for a
 
 | Tag | Description | Unit | Typical Range | Notes |
 |-----|-------------|------|----------------|-------|
-| `timestamp` | Date and time of measurement | ISO 8601 | — | E.g., `2026-02-01T00:00:00Z` |
+| `timestamp` | Date and time of measurement | ISO 8601 | - | E.g., `2026-02-01T00:00:00Z` |
 | `hot_in_c` | Hot fluid inlet temperature (shell-side) | °C | 175–185 | Furnace outlet to exchanger |
 | `hot_out_c` | Hot fluid outlet temperature (shell-side) | °C | 95–105 | Shell-side discharge |
 | `hot_flow_kghr` | Hot fluid mass flow rate | kg/h | 45,000–55,000 | Furnace feed |
@@ -133,7 +133,7 @@ Where:
 **Interpretation:**
 - Rf = 0: No fouling (clean equipment)
 - Rf > 0: Deposit layer present; fouling increasing
-- Rf ≥ 12×10⁻⁴ m²·K/W: **ALARM** — recommend chemical or mechanical cleaning
+- Rf ≥ 12×10⁻⁴ m²·K/W: **ALARM** - recommend chemical or mechanical cleaning
 
 **Practical check:** When Rf reaches trigger, heat duty drops ~8–12% below design, visible as ΔP increase and outlet temperature deviation.
 
@@ -398,22 +398,22 @@ Tube: 0.22 bar < 0.45 bar ✓
 
 ### 9.1 Assumptions
 
-1. **Counter-current flow geometry** — Shell-side and tube-side flow in opposite directions; LMTD correction (F = 0.90) applies.
-2. **Single-phase liquids** — No phase change; enthalpy = m·Cp·ΔT.
-3. **Constant Cp** — Specific heat is temperature-averaged; no composition variation.
-4. **Steady-state operation** — Each row represents a stabilized operating point (transients not captured).
-5. **Fixed surface area** — Tube fouling does not change active area; only U degrades.
-6. **Negligible tube-to-shell wall conduction** — All resistance modeled as convective (h) + fouling (Rf).
-7. **Uniform heat transfer coefficient** — U does not vary axially or around the tube bundle.
+1. **Counter-current flow geometry** - Shell-side and tube-side flow in opposite directions; LMTD correction (F = 0.90) applies.
+2. **Single-phase liquids** - No phase change; enthalpy = m·Cp·ΔT.
+3. **Constant Cp** - Specific heat is temperature-averaged; no composition variation.
+4. **Steady-state operation** - Each row represents a stabilized operating point (transients not captured).
+5. **Fixed surface area** - Tube fouling does not change active area; only U degrades.
+6. **Negligible tube-to-shell wall conduction** - All resistance modeled as convective (h) + fouling (Rf).
+7. **Uniform heat transfer coefficient** - U does not vary axially or around the tube bundle.
 
 ### 9.2 Limitations
 
-1. **Crude oil Cp estimation** — Actual Cp varies with composition and temperature; input Cp is user-estimated or from correlations.
-2. **Fouling assumption** — Rf trend is synthetic. Real fouling depends on crude type, temperature, residence time (not modeled).
-3. **Measurement error** — No filtering; raw sensor data subject to noise. Imbalance threshold (8%) is a crude filter.
-4. **Shell-side bypass** — RCB geometry may have some bypass flow (not modeled; F factor is an empirical correction).
-5. **Tube-side distribution** — Unequal flow through the two passes may occur in reality; treated as average here.
-6. **Corrosion/erosion** — Material degradation not modeled; only fouling tracked.
+1. **Crude oil Cp estimation** - Actual Cp varies with composition and temperature; input Cp is user-estimated or from correlations.
+2. **Fouling assumption** - Rf trend is synthetic. Real fouling depends on crude type, temperature, residence time (not modeled).
+3. **Measurement error** - No filtering; raw sensor data subject to noise. Imbalance threshold (8%) is a crude filter.
+4. **Shell-side bypass** - RCB geometry may have some bypass flow (not modeled; F factor is an empirical correction).
+5. **Tube-side distribution** - Unequal flow through the two passes may occur in reality; treated as average here.
+6. **Corrosion/erosion** - Material degradation not modeled; only fouling tracked.
 
 ---
 
@@ -509,4 +509,4 @@ Response:
 
 ---
 
-*End of Backend Technical Manual — Shell & Tube Heat Exchanger*
+*End of Backend Technical Manual - Shell & Tube Heat Exchanger*
