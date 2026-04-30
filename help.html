@@ -3,11 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ferriq — Home</title>
+<title>Ferriq — Help & Docs</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-/* Ferriq Design System v1.1 — Welcome / Home */
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{
   --gold-800:#463B33;--gold-700:#763D16;--gold-600:#BB6E3D;--gold-500:#E29C57;
@@ -27,11 +26,7 @@
   --font-data:'IBM Plex Mono','SF Mono','Consolas',monospace;
 }
 body{font-family:var(--font-ui);background:var(--surface-page);color:var(--text-primary);overflow:hidden;height:100vh}
-
-/* SHELL */
 .shell{display:grid;grid-template-columns:var(--sidebar-width) 1fr;grid-template-rows:var(--topbar-height) 1fr;height:100vh}
-
-/* SIDEBAR */
 .sidebar{grid-row:1/-1;background:var(--surface-sidebar);box-shadow:var(--shadow-sidebar);display:flex;flex-direction:column;padding-top:16px;z-index:10}
 .sidebar-header{display:flex;align-items:center;gap:10px;padding:0 16px;margin-bottom:24px}
 .sidebar-logo{width:36px;height:36px;flex-shrink:0;text-decoration:none;display:flex;align-items:center}
@@ -63,9 +58,11 @@ body{font-family:var(--font-ui);background:var(--surface-page);color:var(--text-
 .kbd-keys{display:flex;gap:4px}
 kbd{background:var(--gold-100);border:1px solid var(--border-card);border-radius:4px;padding:2px 8px;font-family:var(--font-data);font-size:11px;color:var(--text-secondary)}
 
-
-/* TOPBAR */
 .topbar{background:var(--surface-card);box-shadow:var(--shadow-topbar);display:flex;align-items:center;padding:0 var(--content-margin);justify-content:space-between;z-index:5}
+.breadcrumb{font-size:13px;color:var(--text-secondary)}
+.breadcrumb a{color:var(--text-secondary);text-decoration:none}
+.breadcrumb a:hover{color:var(--gold-600)}
+.breadcrumb span{margin:0 6px;opacity:0.4}
 .brand-name{font-size:16px;font-weight:600;color:var(--text-primary)}
 .brand-env{font-size:13px;color:var(--text-secondary)}
 
@@ -79,50 +76,23 @@ kbd{background:var(--gold-100);border:1px solid var(--border-card);border-radius
 .time-pill.active{background:var(--surface-card);box-shadow:0 1px 3px rgba(0,0,0,0.08);color:var(--text-primary)}
 .avatar{width:32px;height:32px;border-radius:50%;background:var(--gold-600);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#FFF}
 
+.content{padding:var(--content-margin);overflow-y:auto}
 
-/* CONTENT */
-.content{padding:24px var(--content-margin) var(--content-margin);overflow-y:auto}
+.help-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:var(--tile-gap)}
+.help-card{background:var(--surface-card);border:1px solid var(--border-card);border-radius:var(--radius-card);box-shadow:var(--shadow-card);padding:20px;cursor:pointer;transition:border-color 0.15s,transform 0.2s;text-decoration:none;color:inherit;display:block}
+.help-card:hover{border-color:var(--gold-500);transform:translateY(-2px)}
+.help-icon{width:36px;height:36px;background:var(--gold-300);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:12px;color:var(--gold-600)}
+.help-icon svg{width:18px;height:18px}
+.help-card h3{font-size:14px;font-weight:600;margin-bottom:6px}
+.help-card p{font-size:12px;color:var(--text-secondary);line-height:1.5}
+.help-steps{display:flex;flex-direction:column;gap:12px}
+.help-step{display:flex;align-items:flex-start;gap:16px;padding:16px 20px;background:var(--surface-card);border:1px solid var(--border-card);border-radius:12px}
+.step-num{width:28px;height:28px;border-radius:50%;background:var(--gold-300);color:var(--gold-700);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
+.step-desc{font-size:13px;color:var(--text-secondary);margin-top:2px}
 
-/* GREETING */
-.greeting{font-size:26px;font-weight:700;margin-bottom:6px}
-.greeting-sub{font-size:14px;color:var(--text-secondary);margin-bottom:24px}
-
-/* KPI SUMMARY ROW */
-.summary-strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:28px}
-.summary-tile{background:var(--surface-card);border:1px solid var(--border-card);border-radius:var(--radius-card);padding:14px 16px;box-shadow:var(--shadow-card);transition:border-color 0.15s}
-.summary-tile:hover{border-color:var(--gold-500)}
-.summary-tile .st-label{font-size:11px;font-weight:500;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.03em}
-.summary-tile .st-value{font-family:var(--font-data);font-size:22px;font-weight:500;margin-top:4px}
-.summary-tile .st-sub{font-size:11px;color:var(--text-secondary);margin-top:2px}
-
-/* EQUIPMENT GRID */
-.section-heading{font-size:16px;font-weight:600;margin-bottom:4px}
-.section-sub{font-size:13px;color:var(--text-secondary);margin-bottom:20px}
-.equipment-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:var(--tile-gap);margin-bottom:32px}
-.eq-card{min-height:200px;background:var(--surface-card);border:1px solid var(--border-card);border-radius:var(--radius-card);box-shadow:var(--shadow-card);padding:20px;display:flex;flex-direction:column;position:relative;cursor:pointer;transition:border-color 0.15s,transform 0.2s,box-shadow 0.2s;text-decoration:none;color:inherit}
-.eq-card:hover{border-color:var(--gold-500);transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.08),0 0 20px rgba(0,0,0,0.04)}
-.eq-icon{width:40px;height:40px;border-radius:50%;background:var(--gold-300);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:var(--gold-600);margin-bottom:12px}
-.eq-name{font-size:14px;font-weight:600;margin-bottom:2px}
-.eq-unit{font-size:12px;color:var(--text-secondary);margin-bottom:auto}
-.eq-desc{font-size:12px;color:var(--text-secondary);line-height:1.4}
-.eq-footer{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
-.eq-arrow{font-size:16px;color:var(--gold-200);transition:color 0.15s,transform 0.15s}
-.eq-card:hover .eq-arrow{color:var(--gold-600);transform:translateX(2px)}
-
-/* RECENT ACTIVITY */
-.activity-section{margin-top:8px}
-.activity-list{display:flex;flex-direction:column;gap:6px}
-.activity-row{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--surface-card);border:1px solid var(--border-card);border-radius:12px;font-size:13px}
-.activity-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-.activity-dot.ok{background:var(--status-normal)}
-.activity-dot.advisory{background:var(--status-advisory)}
-.activity-dot.info{background:var(--gold-500)}
-.activity-msg{flex:1;color:var(--text-primary)}
-.activity-time{font-size:11px;color:var(--text-secondary);white-space:nowrap;font-family:var(--font-data)}
 </style>
 </head>
 <body>
-
 <div class="shell">
   <nav class="sidebar">
     <div class="sidebar-header">
@@ -131,7 +101,7 @@ kbd{background:var(--gold-100);border:1px solid var(--border-card);border-radius
     </div>
 
     <div class="nav-section-label">Core</div>
-    <a class="nav-item active" href="welcome-home.html">
+    <a class="nav-item" href="welcome-home.html">
       <span class="nav-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7.5L9 2l7 5.5V15a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 012 15V7.5z"/><path d="M6.5 16.5V10h5v6.5"/></svg></span>
       Home
     </a>
@@ -163,7 +133,7 @@ kbd{background:var(--gold-100);border:1px solid var(--border-card);border-radius
     <div class="sidebar-spacer"></div>
     <div class="sidebar-divider"></div>
 
-    <a class="nav-item" href="help.html">
+    <a class="nav-item active" href="help.html">
       <span class="nav-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="7"/><path d="M7 7a2 2 0 013.5 1.5c0 1.5-2 1.5-2 3"/><circle cx="9" cy="13.5" r="0.5" fill="currentColor" stroke="none"/></svg></span>
       Help & Docs
     </a>
@@ -187,11 +157,9 @@ kbd{background:var(--gold-100);border:1px solid var(--border-card);border-radius
       </div>
     </div>
   </nav>
-
   <header class="topbar">
     <div class="topbar-left">
-      <span class="brand-name"><span style="color:var(--gold-600);font-weight:700">Fe</span>rriq</span>
-      <span class="brand-env">Portfolio</span>
+      <div class="breadcrumb"><a href="welcome-home.html">Home</a><span>/</span>Help & Docs</div>
     </div>
     <div class="topbar-right">
       
@@ -201,51 +169,54 @@ kbd{background:var(--gold-100);border:1px solid var(--border-card);border-radius
       <div class="avatar">VP</div>
     </div>
   </header>
-
   <main class="content">
-    <h1 class="greeting" id="greeting"></h1>
-    <p class="greeting-sub" id="greetingSub"></p>
+    <h1 style="font-size:22px;font-weight:700;margin-bottom:4px">Help & Documentation</h1>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:24px">Quick links to engineering manuals, user guides, and keyboard shortcuts</p>
 
-    <!-- KPI SUMMARY STRIP -->
-    <div class="summary-strip">
-      <div class="summary-tile">
-        <div class="st-label">Equipment Online</div>
-        <div class="st-value" style="color:var(--status-normal)">5 / 5</div>
-        <div class="st-sub">All models operational</div>
+    <div class="help-grid">
+      <div class="help-card" onclick="toggleKbd()">
+        <div class="help-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3"/><path d="M14.7 11.1a1.2 1.2 0 00.2 1.3l.04.04a1.44 1.44 0 11-2.04 2.04l-.04-.04a1.2 1.2 0 00-1.3-.2 1.2 1.2 0 00-.72 1.1v.12a1.44 1.44 0 11-2.88 0v-.06a1.2 1.2 0 00-.78-1.1 1.2 1.2 0 00-1.3.2l-.04.04a1.44 1.44 0 11-2.04-2.04l.04-.04a1.2 1.2 0 00.2-1.3 1.2 1.2 0 00-1.1-.72H3.44a1.44 1.44 0 110-2.88h.06a1.2 1.2 0 001.1-.78 1.2 1.2 0 00-.2-1.3l-.04-.04a1.44 1.44 0 112.04-2.04l.04.04a1.2 1.2 0 001.3.2h.06a1.2 1.2 0 00.72-1.1V3.44a1.44 1.44 0 112.88 0v.06a1.2 1.2 0 00.72 1.1 1.2 1.2 0 001.3-.2l.04-.04a1.44 1.44 0 112.04 2.04l-.04.04a1.2 1.2 0 00-.2 1.3v.06a1.2 1.2 0 001.1.72h.12a1.44 1.44 0 110 2.88h-.06a1.2 1.2 0 00-1.1.72z"/></svg></div>
+        <h3>Keyboard Shortcuts</h3>
+        <p>Navigate faster with keyboard shortcuts. Press <kbd>?</kbd> anywhere to view.</p>
       </div>
-      <div class="summary-tile">
-        <div class="st-label">Active Alerts</div>
-        <div class="st-value">0</div>
-        <div class="st-sub">No active alarms</div>
-      </div>
-      <div class="summary-tile">
-        <div class="st-label">Last Data Refresh</div>
-        <div class="st-value" id="lastRefresh" style="font-size:16px">--</div>
-        <div class="st-sub">Demo data loaded</div>
-      </div>
-      <div class="summary-tile">
-        <div class="st-label">System Status</div>
-        <div class="st-value" style="color:var(--status-normal)">&#9679; Normal</div>
-        <div class="st-sub">All checks passing</div>
-      </div>
+      <a class="help-card" href="air-blower.html?manual=1">
+        <div class="help-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2.5h7l3 3v10a1 1 0 01-1 1H4a1 1 0 01-1-1v-12a1 1 0 011-1z"/><polyline points="11 2.5 11 5.5 14 5.5"/><line x1="5.5" y1="9" x2="12.5" y2="9"/><line x1="5.5" y1="12" x2="10" y2="12"/></svg></div>
+        <h3>Air Blower Manual</h3>
+        <p>ASME PTC 10 efficiency calculations, ISO 10816 vibration analysis, bearing health monitoring.</p>
+      </a>
+      <a class="help-card" href="fired-heater.html?manual=1">
+        <div class="help-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2.5h7l3 3v10a1 1 0 01-1 1H4a1 1 0 01-1-1v-12a1 1 0 011-1z"/><polyline points="11 2.5 11 5.5 14 5.5"/><line x1="5.5" y1="9" x2="12.5" y2="9"/><line x1="5.5" y1="12" x2="10" y2="12"/></svg></div>
+        <h3>Fired Heater Manual</h3>
+        <p>Direct & indirect efficiency methods, Siegert equation, excess air optimization.</p>
+      </a>
+      <a class="help-card" href="shell-tube-exchanger.html?manual=1">
+        <div class="help-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2.5h7l3 3v10a1 1 0 01-1 1H4a1 1 0 01-1-1v-12a1 1 0 011-1z"/><polyline points="11 2.5 11 5.5 14 5.5"/><line x1="5.5" y1="9" x2="12.5" y2="9"/><line x1="5.5" y1="12" x2="10" y2="12"/></svg></div>
+        <h3>Shell & Tube Exchanger Manual</h3>
+        <p>LMTD calculations, fouling resistance tracking, TEMA standards reference.</p>
+      </a>
+      <a class="help-card" href="membrane-analyzer.html?manual=1">
+        <div class="help-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2.5h7l3 3v10a1 1 0 01-1 1H4a1 1 0 01-1-1v-12a1 1 0 011-1z"/><polyline points="11 2.5 11 5.5 14 5.5"/><line x1="5.5" y1="9" x2="12.5" y2="9"/><line x1="5.5" y1="12" x2="10" y2="12"/></svg></div>
+        <h3>Membrane Analyzer Manual</h3>
+        <p>H\u2082 permeance, recovery and purity calculations, selectivity monitoring.</p>
+      </a>
+      <a class="help-card" href="furnace-skin-temp.html?manual=1">
+        <div class="help-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2.5h7l3 3v10a1 1 0 01-1 1H4a1 1 0 01-1-1v-12a1 1 0 011-1z"/><polyline points="11 2.5 11 5.5 14 5.5"/><line x1="5.5" y1="9" x2="12.5" y2="9"/><line x1="5.5" y1="12" x2="10" y2="12"/></svg></div>
+        <h3>Furnace Skin Temp Manual</h3>
+        <p>Tube metal temperature prediction, residual drift detection, decoking triggers.</p>
+      </a>
     </div>
 
-    <!-- EQUIPMENT DASHBOARDS -->
-    <div id="equipSection">
-      <h2 class="section-heading">Equipment Dashboards</h2>
-      <p class="section-sub">Select a model to view its detailed monitoring dashboard</p>
-    </div>
-    <div class="equipment-grid" id="equipGrid"></div>
-
-    <!-- RECENT ACTIVITY -->
-    <div class="activity-section">
-      <h2 class="section-heading">Recent Activity</h2>
-      <p class="section-sub" style="margin-bottom:12px">Latest system events</p>
-      <div class="activity-list" id="activityList"></div>
+    <div style="margin-top:32px">
+      <h2 style="font-size:16px;font-weight:600;margin-bottom:12px">Getting Started</h2>
+      <div class="help-steps">
+        <div class="help-step"><div class="step-num">1</div><div><strong>Select Equipment</strong><br><span class="step-desc">Choose a dashboard from the home page equipment grid</span></div></div>
+        <div class="help-step"><div class="step-num">2</div><div><strong>Upload Data</strong><br><span class="step-desc">Use the sidebar CSV upload or click "Load demo data" to try with sample values</span></div></div>
+        <div class="help-step"><div class="step-num">3</div><div><strong>Review Results</strong><br><span class="step-desc">Check the status banner, KPI tiles, and trend charts for calculated performance metrics</span></div></div>
+        <div class="help-step"><div class="step-num">4</div><div><strong>Adjust Settings</strong><br><span class="step-desc">Configure limits, thresholds, and operating parameters in the sidebar settings panel</span></div></div>
+      </div>
     </div>
   </main>
 </div>
-
 
 <div class="kbd-overlay" id="kbdOverlay">
   <div class="kbd-modal">
@@ -265,40 +236,6 @@ kbd{background:var(--gold-100);border:1px solid var(--border-card);border-radius
   </div>
 </div>
 
-
-<script>
-const equipment = [
-  {name:'Air Blower',unit:'Dual-Train Centrifugal',desc:'ASME PTC 10 efficiency, ISO 10816 vibration, bearing health',icon:'AB',href:'air-blower.html'},
-  {name:'Fired Heater Efficiency',unit:'Gas-Fired Process Heater',desc:'Direct & indirect efficiency, loss breakdown, excess air monitoring',icon:'FH',href:'fired-heater.html'},
-  {name:'Shell & Tube Exchanger',unit:'TEMA RCB Crude Preheater',desc:'LMTD effectiveness, fouling tracking, \u0394P monitoring',icon:'HX',href:'shell-tube-exchanger.html'},
-  {name:'Membrane Analyzer',unit:'H\u2082 Recovery Module M-301',desc:'Permeance tracking, H\u2082 recovery & purity, selectivity',icon:'MA',href:'membrane-analyzer.html'},
-  {name:'Furnace Skin Temp',unit:'Radiant Section F-201',desc:'Tube skin prediction, residual drift detection, TMT classification',icon:'FT',href:'furnace-skin-temp.html'},
-];
-
-const hour = new Date().getHours();
-document.getElementById('greeting').textContent = hour<12?'Good morning':hour<18?'Good afternoon':'Good evening';
-const now = new Date();
-document.getElementById('greetingSub').textContent = now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-document.getElementById('lastRefresh').textContent = now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
-
-const grid = document.getElementById('equipGrid');
-equipment.forEach(eq => {
-  grid.innerHTML += `<a class="eq-card" href="${eq.href}"><div class="eq-icon">${eq.icon}</div><div class="eq-name">${eq.name}</div><div class="eq-unit">${eq.unit}</div><div class="eq-desc">${eq.desc}</div><div class="eq-footer"><span></span><span class="eq-arrow">\u2192</span></div></a>`;
-});
-
-// Recent activity (demo)
-const activities = [
-  {dot:'ok',msg:'Air Blower C-101A — efficiency within normal range (76.2%)',time:'2 min ago'},
-  {dot:'info',msg:'Fired Heater H-401 — demo data loaded successfully',time:'5 min ago'},
-  {dot:'ok',msg:'Shell & Tube Exchanger E-201 — fouling factor Rf = 0.00018',time:'12 min ago'},
-  {dot:'advisory',msg:'Membrane M-301 — H\u2082 recovery at 84.1% (design: 85%)',time:'18 min ago'},
-  {dot:'ok',msg:'Furnace F-201 — predicted skin temp 512\u00b0C (limit: 540\u00b0C)',time:'25 min ago'},
-];
-const al = document.getElementById('activityList');
-activities.forEach(a => {
-  al.innerHTML += `<div class="activity-row"><span class="activity-dot ${a.dot}"></span><span class="activity-msg">${a.msg}</span><span class="activity-time">${a.time}</span></div>`;
-});
-</script>
 
 <script>
 function toggleKbd(){document.getElementById('kbdOverlay').classList.toggle('open')}
@@ -325,6 +262,7 @@ function toggleKbd(){document.getElementById('kbdOverlay').classList.toggle('ope
   });
 })();
 </script>
+
 
 </body>
 </html>

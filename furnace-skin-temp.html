@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ChemDash — Furnace Tube Skin Temperature</title>
+<title>Ferriq — Furnace Tube Skin Temperature</title>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -25,7 +25,7 @@
   --shadow-sidebar:2px 0 8px rgba(0,0,0,0.06);
   --shadow-topbar:0 2px 6px rgba(0,0,0,0.04);
   --radius-card:16px;--radius-status:12px;--radius-alert:10px;--radius-nav:8px;
-  --sidebar-width:180px;--topbar-height:56px;--content-margin:24px;--tile-gap:16px;
+  --sidebar-width:200px;--topbar-height:56px;--content-margin:24px;--tile-gap:16px;
   --font-ui:'IBM Plex Sans',-apple-system,BlinkMacSystemFont,sans-serif;
   --font-data:'IBM Plex Mono','SF Mono','Consolas',monospace;
 }
@@ -37,7 +37,7 @@ body{font-family:var(--font-ui);background:var(--surface-page);color:var(--text-
 /* SIDEBAR */
 .sidebar{grid-row:1/-1;background:var(--surface-sidebar);box-shadow:var(--shadow-sidebar);display:flex;flex-direction:column;padding-top:16px;z-index:10}
 .sidebar-header{display:flex;align-items:center;gap:10px;padding:0 16px;margin-bottom:32px}
-.sidebar-logo{width:36px;height:36px;border-radius:50%;background:var(--gold-500);flex-shrink:0;text-decoration:none}
+.sidebar-logo{width:36px;height:36px;flex-shrink:0;text-decoration:none;display:flex;align-items:center}
 .sidebar-title{font-size:15px;font-weight:600;color:#FFF;letter-spacing:0.3px}
 .nav-section-label{font-size:10px;font-weight:500;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1.2px;padding:0 16px;margin-bottom:8px;margin-top:8px}
 .nav-item{display:flex;align-items:center;gap:10px;padding:8px 16px;border-radius:var(--radius-nav);margin:0 8px 2px 8px;cursor:pointer;transition:background 0.15s;text-decoration:none;color:rgba(255,255,255,0.6);font-size:13px;font-weight:500}
@@ -77,6 +77,7 @@ body{font-family:var(--font-ui);background:var(--surface-page);color:var(--text-
 .kpi-tile{background:var(--surface-card);border:1px solid var(--border-card);border-radius:var(--radius-card);padding:12px 16px;transition:border-color 0.15s}
 .kpi-tile:hover{border-color:var(--gold-500)}
 .kpi-tile .kpi-label{font-size:11px;font-weight:500;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.03em}
+.kpi-tile .kpi-label sub{text-transform:none;font-size:0.75em;vertical-align:sub}
 .kpi-tile .kpi-value{font-family:var(--font-data);font-size:20px;font-weight:500;margin-top:4px}
 .kpi-tile .kpi-limit{font-size:10px;color:var(--text-secondary);margin-top:2px}
 .kpi-tile.headline{background:var(--gold-300);border-color:var(--gold-500)}
@@ -147,6 +148,27 @@ table.data td.num{font-family:var(--font-data);text-align:right}
 .btn-sidebar{background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.7);border:1px solid rgba(255,255,255,0.15);width:calc(100% - 32px);margin:4px 16px;border-radius:8px;padding:8px;font-size:12px;cursor:pointer;font-family:var(--font-ui)}
 .btn-sidebar:hover{background:rgba(255,255,255,0.15);color:#FFF}
 
+/* CONFIG BAR */
+.config-bar{background:var(--surface-card);border:1px solid var(--border-card);border-radius:12px;box-shadow:var(--shadow-card);margin-bottom:var(--tile-gap);overflow:hidden}
+.config-bar-header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;cursor:pointer;user-select:none;transition:background 0.1s}
+.config-bar-header:hover{background:var(--gold-100)}
+.config-bar-title{font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.06em}
+.config-toggle{font-size:14px;color:var(--text-secondary);transition:transform 0.2s}
+.config-bar-body{display:grid;grid-template-columns:180px 1fr 1fr;gap:0 24px;padding:12px 16px 16px 16px;border-top:1px solid var(--border-card)}
+.config-bar-body.collapsed{display:none}
+.config-col{min-width:0}
+.config-col h4{font-size:10px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-secondary);margin:0 0 6px 0;font-weight:600;padding-bottom:4px;border-bottom:1px solid var(--border-card)}
+.config-row{display:flex;align-items:center;justify-content:space-between;padding:2px 0;gap:8px}
+.config-row label{font-size:11px;font-weight:400;color:var(--text-secondary);white-space:nowrap;flex-shrink:0}
+.config-row input,.config-row select{background:var(--surface-page);border:1px solid var(--border-card);border-radius:5px;padding:3px 6px;font-size:12px;color:var(--text-primary);font-family:var(--font-data);width:80px;text-align:right}
+.config-row select{text-align:left;width:100px;font-family:var(--font-ui)}
+.config-row input:focus,.config-row select:focus{outline:none;border-color:var(--gold-500);box-shadow:0 0 0 2px rgba(226,156,87,0.12)}
+.upload-inline{display:flex;flex-direction:column;align-items:center;padding:10px 8px;border:1.5px dashed var(--border-card);border-radius:8px;cursor:pointer;text-align:center;transition:all 0.15s;background:var(--surface-page)}
+.upload-inline:hover{border-color:var(--gold-500)}
+.upload-inline input{display:none}
+.upload-inline .up-title{font-weight:600;color:var(--gold-600);font-size:12px}
+.upload-inline .up-sub{font-size:10px;color:var(--text-secondary);margin-top:3px}
+
 /* ACTION BAR */
 .action-bar{display:flex;gap:8px;margin-bottom:var(--tile-gap);flex-wrap:wrap}
 
@@ -173,6 +195,35 @@ table.data td.num{font-family:var(--font-data);text-align:right}
 .manual-panel-body h3:first-child{margin-top:0}
 .manual-panel-body p{margin-bottom:12px}
 .manual-panel-body code{background:var(--gold-100);padding:2px 6px;border-radius:4px;font-family:var(--font-data);font-size:13px}
+
+.sidebar-divider{height:1px;background:rgba(255,255,255,0.08);margin:8px 16px}
+.nav-badge{margin-left:auto;font-size:9px;font-weight:600;padding:2px 7px;border-radius:10px;background:rgba(255,255,255,0.15);color:rgba(255,255,255,0.6)}
+.sidebar-user{display:flex;align-items:center;gap:10px;padding:12px 16px;margin:8px 8px 12px 8px;border-radius:var(--radius-nav);background:rgba(255,255,255,0.06)}
+.user-avatar{width:28px;height:28px;border-radius:50%;background:var(--gold-600);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#FFF;flex-shrink:0}
+.user-info{overflow:hidden}
+.user-name{font-size:12px;font-weight:500;color:rgba(255,255,255,0.9);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-role{font-size:10px;color:rgba(255,255,255,0.4)}
+/* Keyboard shortcut modal */
+.kbd-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.45);z-index:200;align-items:center;justify-content:center}
+.kbd-overlay.open{display:flex}
+.kbd-modal{background:var(--surface-card);border-radius:var(--radius-card);box-shadow:0 8px 40px rgba(0,0,0,0.15);width:480px;max-height:80vh;overflow:auto;padding:24px}
+.kbd-modal h3{font-size:16px;font-weight:600;margin:0 0 16px 0;display:flex;align-items:center;justify-content:space-between}
+.kbd-modal .kbd-close{background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-secondary);padding:4px}
+.kbd-group{margin-bottom:16px}
+.kbd-group h4{font-size:11px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-secondary);margin:0 0 8px 0}
+.kbd-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:13px;color:var(--text-primary)}
+.kbd-keys{display:flex;gap:4px}
+kbd{background:var(--gold-100);border:1px solid var(--border-card);border-radius:4px;padding:2px 8px;font-family:var(--font-data);font-size:11px;color:var(--text-secondary)}
+
+.topbar-left{display:flex;align-items:baseline;gap:10px}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.topbar-btn{background:none;border:1px solid var(--border-card);border-radius:6px;padding:6px;cursor:pointer;display:flex;align-items:center;color:var(--text-secondary);transition:border-color 0.15s,color 0.15s}
+.topbar-btn:hover{border-color:var(--gold-500);color:var(--gold-600)}
+.time-range-bar{display:flex;gap:2px;background:var(--gold-100);border-radius:8px;padding:2px}
+.time-pill{background:none;border:none;padding:5px 10px;font-size:11px;font-weight:500;cursor:pointer;border-radius:6px;color:var(--text-secondary);font-family:var(--font-ui);transition:all 0.15s}
+.time-pill:hover{color:var(--text-primary)}
+.time-pill.active{background:var(--surface-card);box-shadow:0 1px 3px rgba(0,0,0,0.08);color:var(--text-primary)}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--gold-600);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#FFF}
 </style>
 </head>
 <body>
@@ -181,60 +232,126 @@ table.data td.num{font-family:var(--font-data);text-align:right}
   <!-- SIDEBAR -->
   <nav class="sidebar">
     <div class="sidebar-header">
-      <a class="sidebar-logo" href="welcome-home.html" title="Home"></a>
-      <span class="sidebar-title">ChemDash</span>
+      <a class="sidebar-logo" href="welcome-home.html" title="Home"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 290 290" width="36" height="36"><g transform="rotate(3.5,145,145)"><path d="M 231.6,95.0 L 231.6,195.0 L 145.0,245.0 L 58.4,195.0 L 58.4,95.0 L 145.0,45.0 Z" fill="none" stroke="#C8906A" stroke-width="3.5" stroke-linejoin="miter"/><path d="M 32.4,145.0 L 39.1,131.2 L 45.5,119.5 L 51.3,110.9 L 56.1,105.8 L 59.6,104.0 L 62.7,104.6 L 67.0,108.0 L 71.9,114.2 L 77.0,122.6 L 82.3,132.3 L 87.6,142.5 L 93.0,152.4 L 98.5,161.3 L 104.1,168.7 L 110.1,174.1 L 116.6,177.4 L 123.5,177.8 L 130.1,175.6 L 136.1,171.4 L 141.7,166.0 L 147.2,159.6 L 152.6,153.0 L 157.8,146.5 L 163.0,140.7 L 168.0,135.9 L 172.8,132.5 L 177.3,130.5 L 181.6,129.8 L 186.0,130.3 L 190.6,131.9 L 195.5,134.7 L 200.6,138.3 L 205.8,142.4 L 211.1,146.8 L 216.6,151.0 L 222.2,154.7 L 228.0,157.5 L 234.1,158.9 L 240.0,158.7 L 245.5,157.3 L 245.5,157.3 L 240.3,155.8 L 235.5,153.7 L 230.9,151.1 L 226.1,148.2 L 221.1,144.8 L 215.9,140.8 L 210.6,136.5 L 205.2,132.2 L 199.6,128.3 L 193.8,125.1 L 187.8,122.9 L 181.5,122.2 L 175.1,123.2 L 169.0,125.9 L 163.1,130.1 L 157.5,135.5 L 152.0,141.6 L 146.6,148.3 L 141.3,154.8 L 136.2,160.8 L 131.2,165.6 L 126.5,168.9 L 122.4,170.3 L 118.7,170.0 L 114.5,168.0 L 109.8,163.6 L 104.8,157.0 L 99.6,148.6 L 94.4,138.9 L 89.0,128.8 L 83.7,118.8 L 78.2,109.9 L 72.4,102.7 L 66.0,97.8 L 58.5,96.5 L 51.3,99.9 L 45.5,106.9 L 40.7,117.2 L 36.4,130.1 L 32.4,145.0 Z" fill="#C8906A" stroke="none"/></g></svg></a>
+      <span class="sidebar-title"><span style="color:#C8906A;font-weight:600">Fe</span>rriq</span>
     </div>
-    <div class="nav-section-label">Navigation</div>
+
+    <div class="nav-section-label">Core</div>
     <a class="nav-item" href="welcome-home.html">
       <span class="nav-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7.5L9 2l7 5.5V15a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 012 15V7.5z"/><path d="M6.5 16.5V10h5v6.5"/></svg></span>
       Home
     </a>
-    <a class="nav-item active" href="#">
+    <a class="nav-item active" href="dashboards.html">
       <span class="nav-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="5.5" height="5.5" rx="1"/><rect x="10.5" y="2" width="5.5" height="5.5" rx="1"/><rect x="2" y="10.5" width="5.5" height="5.5" rx="1"/><rect x="10.5" y="10.5" width="5.5" height="5.5" rx="1"/></svg></span>
-      Dashboard
+      Dashboards
     </a>
+
+    <div class="nav-section-label">Monitor</div>
+    <a class="nav-item" href="alerts.html">
+      <span class="nav-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2a5 5 0 00-5 5v2.5L2.5 12.5h13L14 9.5V7a5 5 0 00-5-5z"/><path d="M7 13a2 2 0 004 0"/><line x1="9" y1="1" x2="9" y2="2"/></svg></span>
+      Alerts
+    </a>
+    <a class="nav-item" href="activity-log.html">
+      <span class="nav-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 4.5 10 10.5 7 7.5 2 12.5"/><polyline points="12 4.5 16 4.5 16 8.5"/></svg></span>
+      Activity Log
+    </a>
+
+    <div class="nav-section-label">Tools</div>
+    <a class="nav-item" href="data-export.html">
+      <span class="nav-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 11.5v3a1 1 0 01-1 1h-11a1 1 0 01-1-1v-3"/><polyline points="5 7.5 9 3.5 13 7.5"/><line x1="9" y1="3.5" x2="9" y2="12.5"/></svg></span>
+      Data Export
+    </a>
+    <a class="nav-item" href="reports.html">
+      <span class="nav-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2.5h7l3 3v10a1 1 0 01-1 1H4a1 1 0 01-1-1v-12a1 1 0 011-1z"/><polyline points="11 2.5 11 5.5 14 5.5"/><line x1="5.5" y1="9" x2="12.5" y2="9"/><line x1="5.5" y1="12" x2="10" y2="12"/></svg></span>
+      Reports
+    </a>
+
     <div class="sidebar-spacer"></div>
+    <div class="sidebar-divider"></div>
 
-    <div class="nav-section-label">Data</div>
-    <label class="upload-box" for="csvInput">
-      <input type="file" id="csvInput" accept=".csv"/>
-      <div class="up-title">Upload CSV</div>
-      <div class="up-sub" id="upStatus">No file loaded</div>
-    </label>
-    <button class="btn-sidebar" id="loadDemoBtn" style="margin-top:6px">Load demo data</button>
+    <a class="nav-item" href="help.html">
+      <span class="nav-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="7"/><path d="M7 7a2 2 0 013.5 1.5c0 1.5-2 1.5-2 3"/><circle cx="9" cy="13.5" r="0.5" fill="currentColor" stroke="none"/></svg></span>
+      Help & Docs
+    </a>
+    <a class="nav-item" href="changelog.html">
+      <span class="nav-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="7"/><polyline points="9 5 9 9 12 10.5"/></svg></span>
+      Changelog
+    </a>
 
-    <div class="config-section">
-      <h3>Reference Point</h3>
-      <div class="form-row"><label>Fire reference (MW)</label><input class="config-input" type="number" id="setFireRef" value="25" step="1"/></div>
-      <div class="form-row"><label>Flow reference (kg/hr)</label><input class="config-input" type="number" id="setFlowRef" value="80000" step="1000"/></div>
+    <div class="sidebar-divider"></div>
 
-      <h3>Tube Offsets (K)</h3>
-      <div class="form-row"><label>T1 bottom offset</label><input class="config-input" type="number" id="setT1Offset" value="80" step="5"/></div>
-      <div class="form-row"><label>T2 offset</label><input class="config-input" type="number" id="setT2Offset" value="65" step="5"/></div>
-      <div class="form-row"><label>T3 offset</label><input class="config-input" type="number" id="setT3Offset" value="50" step="5"/></div>
-      <div class="form-row"><label>T4 top offset</label><input class="config-input" type="number" id="setT4Offset" value="35" step="5"/></div>
+    <a class="nav-item" href="settings.html">
+      <span class="nav-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3"/><path d="M14.7 11.1a1.2 1.2 0 00.2 1.3l.04.04a1.44 1.44 0 11-2.04 2.04l-.04-.04a1.2 1.2 0 00-1.3-.2 1.2 1.2 0 00-.72 1.1v.12a1.44 1.44 0 11-2.88 0v-.06a1.2 1.2 0 00-.78-1.1 1.2 1.2 0 00-1.3.2l-.04.04a1.44 1.44 0 11-2.04-2.04l.04-.04a1.2 1.2 0 00.2-1.3 1.2 1.2 0 00-1.1-.72H3.44a1.44 1.44 0 110-2.88h.06a1.2 1.2 0 001.1-.78 1.2 1.2 0 00-.2-1.3l-.04-.04a1.44 1.44 0 112.04-2.04l.04.04a1.2 1.2 0 001.3.2h.06a1.2 1.2 0 00.72-1.1V3.44a1.44 1.44 0 112.88 0v.06a1.2 1.2 0 00.72 1.1 1.2 1.2 0 001.3-.2l.04-.04a1.44 1.44 0 112.04 2.04l-.04.04a1.2 1.2 0 00-.2 1.3v.06a1.2 1.2 0 001.1.72h.12a1.44 1.44 0 110 2.88h-.06a1.2 1.2 0 00-1.1.72z"/></svg></span>
+      Settings
+    </a>
 
-      <h3>Limits (°C)</h3>
-      <div class="form-row"><label>Advisory</label><input class="config-input" type="number" id="limAdvisory" value="446" step="1"/></div>
-      <div class="form-row"><label>Alarm (PASCC)</label><input class="config-input" type="number" id="limAlarm" value="475" step="1"/></div>
-      <div class="form-row"><label>Trip limit</label><input class="config-input" type="number" id="limTrip" value="550" step="1"/></div>
+    <div class="sidebar-user">
+      <div class="user-avatar">VP</div>
+      <div class="user-info">
+        <div class="user-name">Vedant Patel</div>
+        <div class="user-role">Engineer</div>
+      </div>
     </div>
-    <button class="btn-sidebar" id="recalcBtn">Recalculate</button>
-    <div style="height:16px"></div>
   </nav>
 
   <!-- TOPBAR -->
   <header class="topbar">
-    <div class="breadcrumb">
-      <a href="welcome-home.html">Home</a><span>/</span>Furnace Skin Temp
+    <div class="topbar-left">
+      <div class="breadcrumb"><a href="welcome-home.html">Home</a><span>/</span>Furnace Skin Temp</div>
     </div>
     <div class="topbar-right">
-      <div class="avatar"></div>
+      <div class="time-range-bar">
+        <button class="time-pill" data-range="1h">1H</button>
+        <button class="time-pill active" data-range="24h">24H</button>
+        <button class="time-pill" data-range="7d">7D</button>
+        <button class="time-pill" data-range="30d">30D</button>
+      </div>
+      <button class="topbar-btn" onclick="toggleKbd()" title="Keyboard shortcuts (?)">
+        <svg viewBox="0 0 18 18" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="14" height="9" rx="1.5"/><line x1="5" y1="8" x2="5" y2="8.01"/><line x1="9" y1="8" x2="9" y2="8.01"/><line x1="13" y1="8" x2="13" y2="8.01"/><line x1="6" y1="11" x2="12" y2="11"/></svg>
+      </button>
+      <div class="avatar">VP</div>
     </div>
   </header>
 
   <!-- CONTENT -->
   <main class="content">
+    <!-- CONFIG BAR -->
+    <div class="config-bar">
+      <div class="config-bar-header">
+        <span class="config-bar-title">Data & Configuration</span>
+        <span class="config-toggle" id="configToggle">▾</span>
+      </div>
+      <div class="config-bar-body collapsed" id="configBody">
+        <div class="config-col">
+          <h4>Data Source</h4>
+          <label class="upload-inline" for="csvInput">
+            <input type="file" id="csvInput" accept=".csv"/>
+            <span class="up-title">Upload CSV</span>
+            <span class="up-sub" id="upStatus">No file loaded</span>
+          </label>
+          <button class="btn btn-sm" id="loadDemoBtn" style="margin-top:6px;width:100%;background:var(--gold-600)">Load demo data</button>
+          <button class="btn btn-sm" id="recalcBtn" style="margin-top:4px;width:100%">Recalculate</button>
+          <button class="btn btn-sm" id="restoreDefaultsBtn" style="margin-top:4px;width:100%;background:var(--gold-200);color:var(--text-primary)">Restore Defaults</button>
+        </div>
+        <div class="config-col">
+          <h4>Settings</h4>
+          <div class="config-row"><label>T<sub>1</sub> offset (C)</label><input type="number" id="setT1Offset" value="80.0" step="0.5"/></div>
+          <div class="config-row"><label>T<sub>2</sub> offset (C)</label><input type="number" id="setT2Offset" value="65.0" step="0.5"/></div>
+          <div class="config-row"><label>T<sub>3</sub> offset (C)</label><input type="number" id="setT3Offset" value="50.0" step="0.5"/></div>
+          <div class="config-row"><label>T<sub>4</sub> offset (C)</label><input type="number" id="setT4Offset" value="35.0" step="0.5"/></div>
+          <div class="config-row"><label>Flow ref (kg/hr)</label><input type="number" id="setFlowRef" value="80000" step="100"/></div>
+          <div class="config-row"><label>Fire ref (MW)</label><input type="number" id="setFireRef" value="25.0" step="0.1"/></div>
+        </div>
+        <div class="config-col">
+          <h4>Limits</h4>
+          <div class="config-row"><label>Advisory (C)</label><input type="number" id="limAdvisory" value="446" step="5"/></div>
+          <div class="config-row"><label>Alarm (C)</label><input type="number" id="limAlarm" value="475" step="5"/></div>
+          <div class="config-row"><label>Trip (C)</label><input type="number" id="limTrip" value="550" step="5"/></div>
+          <div class="config-row"><label>Display max (C)</label><input type="number" id="limAdvDisplay" value="750" step="10"/></div>
+        </div>
+      </div>
+    </div>
+
     <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px">
       <h1 style="font-size:22px;font-weight:700">Furnace Tube Skin Temperature — Radiant Section</h1>
       <span style="font-size:12px;color:var(--text-secondary)">Dittus-Boelert · API 530</span>
@@ -263,12 +380,12 @@ table.data td.num{font-family:var(--font-data);text-align:right}
 
       <div id="kpiArea" style="display:none">
         <div class="kpi-row">
-          <div class="kpi-tile headline"><div class="kpi-label">Hottest Tube (T1) °C</div><div class="kpi-value" id="kpiHottest">—</div><div class="kpi-limit">Radiant section</div></div>
+          <div class="kpi-tile headline"><div class="kpi-label">Hottest Tube (T<sub>1</sub>) °C</div><div class="kpi-value" id="kpiHottest">—</div><div class="kpi-limit">Radiant section</div></div>
           <div class="kpi-tile"><div class="kpi-label">Margin to Advisory (K)</div><div class="kpi-value" id="kpiMargin">—</div><div class="kpi-limit">Advisory <span id="limAdvDisplay">446</span>°C</div></div>
           <div class="kpi-tile"><div class="kpi-label">Process Outlet Temp (°C)</div><div class="kpi-value" id="kpiProcessT">—</div><div class="kpi-limit">Coil outlet</div></div>
           <div class="kpi-tile"><div class="kpi-label">Fire Rate (MW)</div><div class="kpi-value" id="kpiFire">—</div><div class="kpi-limit">Duty input</div></div>
           <div class="kpi-tile"><div class="kpi-label">Process Flow (kg/hr)</div><div class="kpi-value" id="kpiFlow">—</div><div class="kpi-limit">Feed rate</div></div>
-          <div class="kpi-tile"><div class="kpi-label">Residual (T1) (K)</div><div class="kpi-value" id="kpiResidual">—</div><div class="kpi-limit">Meas vs Pred</div></div>
+          <div class="kpi-tile"><div class="kpi-label">Residual (T<sub>1</sub>) (K)</div><div class="kpi-value" id="kpiResidual">—</div><div class="kpi-limit">Meas vs Pred</div></div>
         </div>
 
         <div class="banner status-ok" id="statusBanner">
@@ -293,7 +410,7 @@ table.data td.num{font-family:var(--font-data);text-align:right}
           <div class="card-body">
             <div class="chart-grid">
               <div class="chart-box"><h4>Skin Temps (all tubes) vs Advisory/Alarm</h4><div class="chart-canvas-wrap"><canvas id="chart-temps"></canvas></div></div>
-              <div class="chart-box"><h4>T1 Measured vs Predicted</h4><div class="chart-canvas-wrap"><canvas id="chart-t1"></canvas></div></div>
+              <div class="chart-box"><h4>T<sub>1</sub> Measured vs Predicted</h4><div class="chart-canvas-wrap"><canvas id="chart-t1"></canvas></div></div>
               <div class="chart-box"><h4>Residuals (K)</h4><div class="chart-canvas-wrap"><canvas id="chart-residuals"></canvas></div></div>
               <div class="chart-box"><h4>Fire Rate (MW) & Flow (kg/hr)</h4><div class="chart-canvas-wrap"><canvas id="chart-power"></canvas></div></div>
             </div>
@@ -312,7 +429,7 @@ table.data td.num{font-family:var(--font-data);text-align:right}
         <div class="card-header">Processed rows (most recent 50)</div>
         <div class="card-body" style="overflow-x:auto">
           <table class="data" id="resultTable">
-            <thead><tr><th>Timestamp</th><th>T1 Meas</th><th>T2 Meas</th><th>T3 Meas</th><th>T4 Meas</th><th>Process T</th><th>Fire (MW)</th><th>Flow (kg/hr)</th><th>Hottest</th><th>Residual</th><th>Status</th></tr></thead>
+            <thead><tr><th>Timestamp</th><th>T<sub>1</sub> Meas</th><th>T<sub>2</sub> Meas</th><th>T<sub>3</sub> Meas</th><th>T<sub>4</sub> Meas</th><th>Process T</th><th>Fire (MW)</th><th>Flow (kg/hr)</th><th>Hottest</th><th>Residual</th><th>Status</th></tr></thead>
             <tbody><tr><td colspan="11" style="text-align:center;color:var(--text-secondary)">No rows processed.</td></tr></tbody>
           </table>
         </div>
@@ -327,7 +444,7 @@ table.data td.num{font-family:var(--font-data);text-align:right}
         <p><code>Delta_T = k * (Fire / Fire_ref)^0.8 * (Flow_ref / Flow)^0.8</code></p>
         <p>where:</p>
         <ul style="margin-left:20px;margin-bottom:12px">
-          <li><code>k</code> = tube-specific offset (K) accounting for radiant position (T1 bottom 80K, T2 65K, T3 50K, T4 top 35K)</li>
+          <li><code>k</code> = tube-specific offset (K) accounting for radiant position (T<sub>1</sub> bottom 80K, T<sub>2</sub> 65K, T<sub>3</sub> 50K, T<sub>4</sub> top 35K)</li>
           <li><code>Fire</code> = current firing rate (MW)</li>
           <li><code>Fire_ref</code> = reference firing rate (25 MW default)</li>
           <li><code>Flow</code> = current process flow (kg/hr)</li>
@@ -361,11 +478,11 @@ table.data td.num{font-family:var(--font-data);text-align:right}
     <p><strong>API 530</strong> — Tubular Heaters with Cylindrical Furnaces. Operational limits: advisory 446°C, alarm 475°C (PASCC), trip 550°C.</p>
     <p><strong>ASME PTC-4</strong> — Performance Test Code on Indirect Heat Transfer Equipment. Methodology for thermal acceptance tests.</p>
     <h3>3. Input Tags (6 variables)</h3>
-    <p>Timestamp, Skin T1, Skin T2, Skin T3, Skin T4 (measured °C), Process outlet T (°C), Firing rate (MW), Process flow (kg/hr).</p>
+    <p>Timestamp, Skin T<sub>1</sub>, Skin T<sub>2</sub>, Skin T<sub>3</sub>, Skin T<sub>4</sub> (measured °C), Process outlet T (°C), Firing rate (MW), Process flow (kg/hr).</p>
     <h3>4. Correlation & Calculations</h3>
     <p><code>Delta_T_i = k_i * (Fire/Fire_ref)^0.8 * (Flow_ref/Flow)^0.8</code></p>
     <p><code>T_predicted = T_process + Delta_T</code></p>
-    <p>k_i: T1=80K (bottom, hottest), T2=65K, T3=50K, T4=35K (top, coolest).</p>
+    <p>k_i: T<sub>1</sub>=80K (bottom, hottest), T<sub>2</sub>=65K, T<sub>3</sub>=50K, T<sub>4</sub>=35K (top, coolest).</p>
     <p>Residual = T_measured - T_predicted. Alert if |residual| > 5 K.</p>
     <h3>5. Alert Tiers</h3>
     <p><strong>Watch:</strong> Any residual >5 K (measurement drift or correlation deviation).</p>
@@ -398,7 +515,7 @@ function rollUp(alerts){if(alerts.trip)return"trip";if(alerts.alarm)return"alarm
 // ═══════════════════════════════════════════════════════
 // ROW & BATCH PROCESSOR
 // ═══════════════════════════════════════════════════════
-function processRow(row,s,lim,t1FF){const ts=parseTs(lookup(row,"timestamp"));if(!ts)return{drop:true,reason:"bad timestamp"};const t1=num(lookup(row,"skin_t1_c")),t2=num(lookup(row,"skin_t2_c")),t3=num(lookup(row,"skin_t3_c")),t4=num(lookup(row,"skin_t4_c"));const pt=num(lookup(row,"process_t_c")),fire=num(lookup(row,"fire_rate_mw")),flow=num(lookup(row,"process_flow_kghr"));if(isNaN(fire)||isNaN(flow)||isNaN(pt))return{drop:true,reason:"missing critical tag"};const tubes=[{name:"T1",measured:t1,offset:s.t1off,color:"#D4432A"},{name:"T2",measured:t2,offset:s.t2off,color:"#C4890E"},{name:"T3",measured:t3,offset:s.t3off,color:"#BB6E3D"},{name:"T4",measured:t4,offset:s.t4off,color:"#3A7D52"}];tubes.forEach(tub=>{const dt=predictDT(fire,flow,tub.offset,s);tub.predicted=isNaN(dt)?NaN:pt+dt;tub.residual=isNaN(tub.measured)||isNaN(tub.predicted)?NaN:tub.measured-tub.predicted;});const hottest=Math.max(...tubes.map(t=>t.measured).filter(x=>!isNaN(x)));const hotTube=tubes.find(t=>t.measured===hottest);const margin=isNaN(hottest)?NaN:lim.advisory-hottest;const residual1=tubes[0].residual;const alertInfo=buildAlerts(tubes,lim);const status=rollUp(alertInfo);return{drop:false,timestamp:ts,tubes,process_t:pt,fire,flow,hottest,hotTube:hotTube?hotTube.name:"—",margin,residual:residual1,alerts:alertInfo.alerts,status};}
+function processRow(row,s,lim,t1FF){const ts=parseTs(lookup(row,"timestamp"));if(!ts)return{drop:true,reason:"bad timestamp"};const t1=num(lookup(row,"skin_t1_c")),t2=num(lookup(row,"skin_t2_c")),t3=num(lookup(row,"skin_t3_c")),t4=num(lookup(row,"skin_t4_c"));const pt=num(lookup(row,"process_t_c")),fire=num(lookup(row,"fire_rate_mw")),flow=num(lookup(row,"process_flow_kghr"));if(isNaN(fire)||isNaN(flow)||isNaN(pt))return{drop:true,reason:"missing critical tag"};const tubes=[{name:"T<sub>1</sub>",measured:t1,offset:s.t1off,color:"#D4432A"},{name:"T<sub>2</sub>",measured:t2,offset:s.t2off,color:"#C4890E"},{name:"T<sub>3</sub>",measured:t3,offset:s.t3off,color:"#BB6E3D"},{name:"T<sub>4</sub>",measured:t4,offset:s.t4off,color:"#3A7D52"}];tubes.forEach(tub=>{const dt=predictDT(fire,flow,tub.offset,s);tub.predicted=isNaN(dt)?NaN:pt+dt;tub.residual=isNaN(tub.measured)||isNaN(tub.predicted)?NaN:tub.measured-tub.predicted;});const hottest=Math.max(...tubes.map(t=>t.measured).filter(x=>!isNaN(x)));const hotTube=tubes.find(t=>t.measured===hottest);const margin=isNaN(hottest)?NaN:lim.advisory-hottest;const residual1=tubes[0].residual;const alertInfo=buildAlerts(tubes,lim);const status=rollUp(alertInfo);return{drop:false,timestamp:ts,tubes,process_t:pt,fire,flow,hottest,hotTube:hotTube?hotTube.name:"—",margin,residual:residual1,alerts:alertInfo.alerts,status};}
 function processBatch(rows,s,lim){const parsed=[];for(const r of rows){const ts=parseTs(lookup(r,"timestamp"));if(ts)parsed.push([ts,r]);}parsed.sort((a,b)=>a[0]-b[0]);let lastT1=null,lastT1Ts=null;const out=[];let dropped=0;const reasons={};for(const[ts,r]of parsed){const live=num(lookup(r,"process_t_c"));let ff=null;if(isNaN(live)&&lastT1!==null){const ageH=(ts-lastT1Ts)/3600000;if(ageH<=4)ff=lastT1;}const res=processRow(r,s,lim,ff);if(res.drop){dropped++;reasons[res.reason]=(reasons[res.reason]||0)+1;}else{out.push(res);if(!isNaN(res.process_t)){lastT1=res.process_t;lastT1Ts=ts;}}}return{processed:out,dropped,reasons};}
 
 // ═══════════════════════════════════════════════════════
@@ -413,12 +530,12 @@ function renderResult(res,lim){document.getElementById("statusArea").style.displ
 
 function mkChart(id,labels,datasets,dualY){if(charts[id]){charts[id].destroy();}const ctx=document.getElementById("chart-"+id).getContext("2d");const opts={responsive:true,maintainAspectRatio:false,animation:false,plugins:{legend:{position:"bottom",labels:{font:{size:11,family:"IBM Plex Sans"},boxWidth:12}}},scales:{x:{ticks:{maxTicksLimit:6,font:{size:10,family:"IBM Plex Sans"}}},y:{ticks:{font:{size:10,family:"IBM Plex Mono"}}}},elements:{point:{radius:0},line:{borderWidth:1.5,tension:0.1}}};if(dualY)opts.scales.y1={position:"right",grid:{drawOnChartArea:false},ticks:{font:{size:10,family:"IBM Plex Mono"}}};charts[id]=new Chart(ctx,{type:"line",data:{labels,datasets},options:opts});}
 
-function renderBatch(batch,lim){const sumEl=document.getElementById("batchSummary");const tbody=document.getElementById("tubeTable");const resultTbody=document.getElementById("resultTable").querySelector("tbody");if(!batch||!batch.processed.length){sumEl.innerHTML='<div class="stat">No rows processed.</div>';tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-secondary)">No data.</td></tr>';resultTbody.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--text-secondary)">No rows.</td></tr>';return;}const reasons=Object.entries(batch.reasons).map(([k,v])=>`${k}: ${v}`).join("; ")||"none";const sc=batch.processed.reduce((acc,r)=>{acc[r.status]=(acc[r.status]||0)+1;return acc;},{});sumEl.innerHTML=`<div class="stat">Processed: <strong>${batch.processed.length}</strong></div><div class="stat">Dropped: <strong>${batch.dropped}</strong></div><div class="stat">Drop reasons: ${reasons}</div><div class="stat">OK: <strong>${sc.ok||0}</strong></div><div class="stat">Watch: <strong>${sc.watch||0}</strong></div><div class="stat">Advisory: <strong>${sc.advisory||0}</strong></div><div class="stat">Alarm: <strong>${sc.alarm||0}</strong></div><div class="stat">Trip: <strong>${sc.trip||0}</strong></div>`;const latestRow=batch.processed[batch.processed.length-1];tbody.innerHTML=latestRow.tubes.map(tub=>{const margin=lim.advisory-tub.measured;const marginFmt=isNaN(margin)?"—":margin.toFixed(1);return`<tr><td><strong>${tub.name}</strong></td><td class="num">${fmt(tub.measured,1)}</td><td class="num">${fmt(tub.predicted,1)}</td><td class="num">${fmt(tub.residual,1)}</td><td class="num">${marginFmt}</td><td><span class="status-pill ${classify(tub.measured,lim)}">${classify(tub.measured,lim)}</span></td></tr>`;}).join("");const rows=batch.processed.slice(-50).reverse();resultTbody.innerHTML=rows.map(r=>{const ts=r.timestamp;const tsStr=`${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,"0")}-${String(ts.getDate()).padStart(2,"0")} ${String(ts.getHours()).padStart(2,"0")}:${String(ts.getMinutes()).padStart(2,"0")}`;return`<tr><td>${tsStr}</td><td class="num">${fmt(r.tubes[0].measured,1)}</td><td class="num">${fmt(r.tubes[1].measured,1)}</td><td class="num">${fmt(r.tubes[2].measured,1)}</td><td class="num">${fmt(r.tubes[3].measured,1)}</td><td class="num">${fmt(r.process_t,1)}</td><td class="num">${fmt(r.fire,1)}</td><td class="num">${fmt(r.flow,0)}</td><td class="num">${fmt(r.hottest,1)}</td><td class="num">${fmt(r.residual,1)}</td><td><span class="status-pill ${r.status}">${r.status}</span></td></tr>`;}).join("");if(batch.processed.length<2)return;const stride=Math.max(1,Math.floor(batch.processed.length/200));const sample=batch.processed.filter((_,i)=>i%stride===0);const labels=sample.map(r=>{const d=r.timestamp;return`${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;});const advisoryLineData=sample.map(()=>lim.advisory);const alarmLineData=sample.map(()=>lim.alarm);mkChart("temps",labels,[{label:"T1 (hottest)",data:sample.map(r=>r.tubes[0].measured),borderColor:"#D4432A",backgroundColor:"transparent"},{label:"T2",data:sample.map(r=>r.tubes[1].measured),borderColor:"#C4890E",backgroundColor:"transparent"},{label:"T3",data:sample.map(r=>r.tubes[2].measured),borderColor:"#BB6E3D",backgroundColor:"transparent"},{label:"T4",data:sample.map(r=>r.tubes[3].measured),borderColor:"#3A7D52",backgroundColor:"transparent"},{label:`Advisory ${lim.advisory}°C`,data:advisoryLineData,borderColor:"#C4890E",backgroundColor:"transparent",borderDash:[8,6]},{label:`Alarm ${lim.alarm}°C`,data:alarmLineData,borderColor:"#D4432A",backgroundColor:"transparent",borderDash:[8,6]}],false);mkChart("t1",labels,[{label:"Measured",data:sample.map(r=>r.tubes[0].measured),borderColor:"#D4432A",backgroundColor:"transparent"},{label:"Predicted",data:sample.map(r=>r.tubes[0].predicted),borderColor:"#BB6E3D",backgroundColor:"transparent"}],false);mkChart("residuals",labels,[{label:"T1 residual",data:sample.map(r=>r.tubes[0].residual),borderColor:"#D4432A",backgroundColor:"transparent"},{label:"T2 residual",data:sample.map(r=>r.tubes[1].residual),borderColor:"#C4890E",backgroundColor:"transparent"},{label:"T3 residual",data:sample.map(r=>r.tubes[2].residual),borderColor:"#BB6E3D",backgroundColor:"transparent"},{label:"T4 residual",data:sample.map(r=>r.tubes[3].residual),borderColor:"#3A7D52",backgroundColor:"transparent"}],false);mkChart("power",labels,[{label:"Fire (MW)",data:sample.map(r=>r.fire),borderColor:"#BB6E3D",backgroundColor:"transparent",yAxisID:"y"},{label:"Flow (kg/hr)",data:sample.map(r=>r.flow/1000),borderColor:"#463B33",backgroundColor:"transparent",yAxisID:"y1"}],true);}
+function renderBatch(batch,lim){const sumEl=document.getElementById("batchSummary");const tbody=document.getElementById("tubeTable");const resultTbody=document.getElementById("resultTable").querySelector("tbody");if(!batch||!batch.processed.length){sumEl.innerHTML='<div class="stat">No rows processed.</div>';tbody.innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text-secondary)">No data.</td></tr>';resultTbody.innerHTML='<tr><td colspan="11" style="text-align:center;color:var(--text-secondary)">No rows.</td></tr>';return;}const reasons=Object.entries(batch.reasons).map(([k,v])=>`${k}: ${v}`).join("; ")||"none";const sc=batch.processed.reduce((acc,r)=>{acc[r.status]=(acc[r.status]||0)+1;return acc;},{});sumEl.innerHTML=`<div class="stat">Processed: <strong>${batch.processed.length}</strong></div><div class="stat">Dropped: <strong>${batch.dropped}</strong></div><div class="stat">Drop reasons: ${reasons}</div><div class="stat">OK: <strong>${sc.ok||0}</strong></div><div class="stat">Watch: <strong>${sc.watch||0}</strong></div><div class="stat">Advisory: <strong>${sc.advisory||0}</strong></div><div class="stat">Alarm: <strong>${sc.alarm||0}</strong></div><div class="stat">Trip: <strong>${sc.trip||0}</strong></div>`;const latestRow=batch.processed[batch.processed.length-1];tbody.innerHTML=latestRow.tubes.map(tub=>{const margin=lim.advisory-tub.measured;const marginFmt=isNaN(margin)?"—":margin.toFixed(1);return`<tr><td><strong>${tub.name}</strong></td><td class="num">${fmt(tub.measured,1)}</td><td class="num">${fmt(tub.predicted,1)}</td><td class="num">${fmt(tub.residual,1)}</td><td class="num">${marginFmt}</td><td><span class="status-pill ${classify(tub.measured,lim)}">${classify(tub.measured,lim)}</span></td></tr>`;}).join("");const rows=batch.processed.slice(-50).reverse();resultTbody.innerHTML=rows.map(r=>{const ts=r.timestamp;const tsStr=`${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,"0")}-${String(ts.getDate()).padStart(2,"0")} ${String(ts.getHours()).padStart(2,"0")}:${String(ts.getMinutes()).padStart(2,"0")}`;return`<tr><td>${tsStr}</td><td class="num">${fmt(r.tubes[0].measured,1)}</td><td class="num">${fmt(r.tubes[1].measured,1)}</td><td class="num">${fmt(r.tubes[2].measured,1)}</td><td class="num">${fmt(r.tubes[3].measured,1)}</td><td class="num">${fmt(r.process_t,1)}</td><td class="num">${fmt(r.fire,1)}</td><td class="num">${fmt(r.flow,0)}</td><td class="num">${fmt(r.hottest,1)}</td><td class="num">${fmt(r.residual,1)}</td><td><span class="status-pill ${r.status}">${r.status}</span></td></tr>`;}).join("");if(batch.processed.length<2)return;const stride=Math.max(1,Math.floor(batch.processed.length/200));const sample=batch.processed.filter((_,i)=>i%stride===0);const labels=sample.map(r=>{const d=r.timestamp;return`${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;});const advisoryLineData=sample.map(()=>lim.advisory);const alarmLineData=sample.map(()=>lim.alarm);mkChart("temps",labels,[{label:"T₁ (hottest)",data:sample.map(r=>r.tubes[0].measured),borderColor:"#D4432A",backgroundColor:"transparent"},{label:"T₂",data:sample.map(r=>r.tubes[1].measured),borderColor:"#C4890E",backgroundColor:"transparent"},{label:"T₃",data:sample.map(r=>r.tubes[2].measured),borderColor:"#BB6E3D",backgroundColor:"transparent"},{label:"T₄",data:sample.map(r=>r.tubes[3].measured),borderColor:"#3A7D52",backgroundColor:"transparent"},{label:`Advisory ${lim.advisory}°C`,data:advisoryLineData,borderColor:"#C4890E",backgroundColor:"transparent",borderDash:[8,6]},{label:`Alarm ${lim.alarm}°C`,data:alarmLineData,borderColor:"#D4432A",backgroundColor:"transparent",borderDash:[8,6]}],false);mkChart("t1",labels,[{label:"Measured",data:sample.map(r=>r.tubes[0].measured),borderColor:"#D4432A",backgroundColor:"transparent"},{label:"Predicted",data:sample.map(r=>r.tubes[0].predicted),borderColor:"#BB6E3D",backgroundColor:"transparent"}],false);mkChart("residuals",labels,[{label:"T₁ residual",data:sample.map(r=>r.tubes[0].residual),borderColor:"#D4432A",backgroundColor:"transparent"},{label:"T₂ residual",data:sample.map(r=>r.tubes[1].residual),borderColor:"#C4890E",backgroundColor:"transparent"},{label:"T₃ residual",data:sample.map(r=>r.tubes[2].residual),borderColor:"#BB6E3D",backgroundColor:"transparent"},{label:"T₄ residual",data:sample.map(r=>r.tubes[3].residual),borderColor:"#3A7D52",backgroundColor:"transparent"}],false);mkChart("power",labels,[{label:"Fire (MW)",data:sample.map(r=>r.fire),borderColor:"#BB6E3D",backgroundColor:"transparent",yAxisID:"y"},{label:"Flow (kg/hr)",data:sample.map(r=>r.flow/1000),borderColor:"#463B33",backgroundColor:"transparent",yAxisID:"y1"}],true);}
 
 function runProcess(){if(!currentRows.length)return;const s=readSettings(),l=readLimits();currentBatch=processBatch(currentRows,s,l);if(currentBatch.processed.length){renderResult(currentBatch.processed[currentBatch.processed.length-1],l);}else{document.getElementById("statusArea").style.display="block";document.getElementById("kpiArea").style.display="none";document.getElementById("statusArea").innerHTML='<div class="empty-state"><h3>All rows dropped</h3><p>Check Data & Log tab for drop reasons.</p></div>';}renderBatch(currentBatch,l);}
 
 // Demo data (28 rows, Feb 1-7 2026, 6-hour intervals — from original model)
-const DEMO_SERIES=[{"Timestamp":"2026-02-01 00:00","Process Outlet T":"361.0","Fire Rate":"25.04","Process Flow":"79962","Skin T1":"441.0","Skin T2":"426.2","Skin T3":"411.5","Skin T4":"394.5"},{"Timestamp":"2026-02-01 06:00","Process Outlet T":"360.6","Fire Rate":"24.77","Process Flow":"79831","Skin T1":"439.7","Skin T2":"427.0","Skin T3":"409.8","Skin T4":"397.7"},{"Timestamp":"2026-02-01 12:00","Process Outlet T":"360.9","Fire Rate":"25.00","Process Flow":"79769","Skin T1":"441.7","Skin T2":"424.0","Skin T3":"413.4","Skin T4":"394.5"},{"Timestamp":"2026-02-01 18:00","Process Outlet T":"359.2","Fire Rate":"24.97","Process Flow":"80077","Skin T1":"440.2","Skin T2":"421.9","Skin T3":"407.8","Skin T4":"394.5"},{"Timestamp":"2026-02-02 00:00","Process Outlet T":"360.7","Fire Rate":"25.24","Process Flow":"80190","Skin T1":"443.2","Skin T2":"425.3","Skin T3":"411.9","Skin T4":"397.9"},{"Timestamp":"2026-02-02 06:00","Process Outlet T":"359.9","Fire Rate":"25.25","Process Flow":"80325","Skin T1":"442.2","Skin T2":"424.3","Skin T3":"410.9","Skin T4":"393.5"},{"Timestamp":"2026-02-02 12:00","Process Outlet T":"360.8","Fire Rate":"24.89","Process Flow":"79964","Skin T1":"439.2","Skin T2":"423.8","Skin T3":"408.4","Skin T4":"396.3"},{"Timestamp":"2026-02-02 18:00","Process Outlet T":"360.5","Fire Rate":"25.03","Process Flow":"80121","Skin T1":"442.1","Skin T2":"426.2","Skin T3":"411.6","Skin T4":"394.1"},{"Timestamp":"2026-02-03 00:00","Process Outlet T":"360.8","Fire Rate":"25.25","Process Flow":"80111","Skin T1":"441.7","Skin T2":"425.3","Skin T3":"410.6","Skin T4":"397.8"},{"Timestamp":"2026-02-03 06:00","Process Outlet T":"359.3","Fire Rate":"24.98","Process Flow":"80223","Skin T1":"437.7","Skin T2":"425.0","Skin T3":"408.2","Skin T4":"393.4"},{"Timestamp":"2026-02-03 12:00","Process Outlet T":"360.7","Fire Rate":"25.25","Process Flow":"80266","Skin T1":"439.3","Skin T2":"425.6","Skin T3":"411.9","Skin T4":"393.5"},{"Timestamp":"2026-02-03 18:00","Process Outlet T":"360.6","Fire Rate":"25.30","Process Flow":"79745","Skin T1":"441.1","Skin T2":"424.8","Skin T3":"409.5","Skin T4":"396.1"},{"Timestamp":"2026-02-04 00:00","Process Outlet T":"360.1","Fire Rate":"25.40","Process Flow":"80128","Skin T1":"440.5","Skin T2":"428.3","Skin T3":"411.4","Skin T4":"396.5"},{"Timestamp":"2026-02-04 06:00","Process Outlet T":"360.4","Fire Rate":"25.26","Process Flow":"79892","Skin T1":"441.7","Skin T2":"424.9","Skin T3":"411.9","Skin T4":"394.7"},{"Timestamp":"2026-02-04 12:00","Process Outlet T":"360.7","Fire Rate":"25.37","Process Flow":"80066","Skin T1":"442.3","Skin T2":"428.9","Skin T3":"413.5","Skin T4":"397.2"},{"Timestamp":"2026-02-04 18:00","Process Outlet T":"360.7","Fire Rate":"25.22","Process Flow":"79659","Skin T1":"443.1","Skin T2":"427.8","Skin T3":"409.8","Skin T4":"395.7"},{"Timestamp":"2026-02-05 00:00","Process Outlet T":"361.0","Fire Rate":"26.09","Process Flow":"71205","Skin T1":"452.7","Skin T2":"436.3","Skin T3":"416.8","Skin T4":"399.8"},{"Timestamp":"2026-02-05 06:00","Process Outlet T":"360.4","Fire Rate":"25.87","Process Flow":"74072","Skin T1":"448.0","Skin T2":"430.0","Skin T3":"416.3","Skin T4":"398.7"},{"Timestamp":"2026-02-05 12:00","Process Outlet T":"360.7","Fire Rate":"25.63","Process Flow":"79692","Skin T1":"442.7","Skin T2":"425.0","Skin T3":"411.6","Skin T4":"396.9"},{"Timestamp":"2026-02-05 18:00","Process Outlet T":"359.7","Fire Rate":"25.55","Process Flow":"79609","Skin T1":"445.0","Skin T2":"427.2","Skin T3":"411.3","Skin T4":"393.7"},{"Timestamp":"2026-02-06 00:00","Process Outlet T":"359.0","Fire Rate":"25.49","Process Flow":"79849","Skin T1":"441.8","Skin T2":"424.9","Skin T3":"410.9","Skin T4":"393.9"},{"Timestamp":"2026-02-06 06:00","Process Outlet T":"360.4","Fire Rate":"25.39","Process Flow":"79713","Skin T1":"445.4","Skin T2":"424.8","Skin T3":"410.7","Skin T4":"397.6"},{"Timestamp":"2026-02-06 12:00","Process Outlet T":"359.6","Fire Rate":"25.69","Process Flow":"80322","Skin T1":"444.1","Skin T2":"424.1","Skin T3":"411.6","Skin T4":"397.7"},{"Timestamp":"2026-02-06 18:00","Process Outlet T":"358.9","Fire Rate":"25.44","Process Flow":"80038","Skin T1":"441.7","Skin T2":"427.2","Skin T3":"411.8","Skin T4":"395.1"},{"Timestamp":"2026-02-07 00:00","Process Outlet T":"360.1","Fire Rate":"25.96","Process Flow":"80053","Skin T1":"446.2","Skin T2":"426.7","Skin T3":"413.6","Skin T4":"395.2"},{"Timestamp":"2026-02-07 06:00","Process Outlet T":"359.4","Fire Rate":"25.45","Process Flow":"80361","Skin T1":"443.1","Skin T2":"424.2","Skin T3":"407.7","Skin T4":"396.7"},{"Timestamp":"2026-02-07 12:00","Process Outlet T":"359.9","Fire Rate":"26.04","Process Flow":"80157","Skin T1":"444.5","Skin T2":"425.5","Skin T3":"410.5","Skin T4":"397.0"},{"Timestamp":"2026-02-07 18:00","Process Outlet T":"359.7","Fire Rate":"25.96","Process Flow":"79969","Skin T1":"448.8","Skin T2":"426.7","Skin T3":"409.7","Skin T4":"396.1"}];
+const DEMO_SERIES=[{"Timestamp":"2026-01-29 23:50","Process Outlet T":"359.4","Fire Rate":"24.62","Process Flow":"79597","Skin T1":"438.9","Skin T2":"425.1","Skin T3":"408.2","Skin T4":"392.6"},{"Timestamp":"2026-01-30 11:50","Process Outlet T":"358.6","Fire Rate":"25.17","Process Flow":"79693","Skin T1":"439.5","Skin T2":"425.1","Skin T3":"409.6","Skin T4":"394.0"},{"Timestamp":"2026-01-30 23:50","Process Outlet T":"359.2","Fire Rate":"24.63","Process Flow":"80264","Skin T1":"436.8","Skin T2":"422.5","Skin T3":"409.9","Skin T4":"393.7"},{"Timestamp":"2026-01-31 11:50","Process Outlet T":"359.0","Fire Rate":"25.63","Process Flow":"79588","Skin T1":"441.7","Skin T2":"425.4","Skin T3":"410.5","Skin T4":"395.1"},{"Timestamp":"2026-01-31 23:50","Process Outlet T":"360.9","Fire Rate":"24.77","Process Flow":"80340","Skin T1":"439.9","Skin T2":"424.2","Skin T3":"411.1","Skin T4":"395.4"},{"Timestamp":"2026-02-01 11:50","Process Outlet T":"360.3","Fire Rate":"25.52","Process Flow":"80213","Skin T1":"442.2","Skin T2":"425.5","Skin T3":"411.0","Skin T4":"395.6"},{"Timestamp":"2026-02-01 23:50","Process Outlet T":"358.8","Fire Rate":"24.32","Process Flow":"79936","Skin T1":"437.1","Skin T2":"422.8","Skin T3":"407.5","Skin T4":"394.2"},{"Timestamp":"2026-02-02 11:50","Process Outlet T":"359.2","Fire Rate":"25.38","Process Flow":"79627","Skin T1":"440.2","Skin T2":"427.1","Skin T3":"409.3","Skin T4":"393.8"},{"Timestamp":"2026-02-02 23:50","Process Outlet T":"359.0","Fire Rate":"24.28","Process Flow":"80501","Skin T1":"435.0","Skin T2":"423.9","Skin T3":"407.0","Skin T4":"392.3"},{"Timestamp":"2026-02-03 11:50","Process Outlet T":"360.8","Fire Rate":"25.62","Process Flow":"80230","Skin T1":"442.2","Skin T2":"427.1","Skin T3":"411.4","Skin T4":"397.0"},{"Timestamp":"2026-02-03 23:50","Process Outlet T":"361.1","Fire Rate":"24.3","Process Flow":"80775","Skin T1":"438.2","Skin T2":"425.2","Skin T3":"408.2","Skin T4":"396.1"},{"Timestamp":"2026-02-04 11:50","Process Outlet T":"359.3","Fire Rate":"25.45","Process Flow":"79492","Skin T1":"440.3","Skin T2":"425.3","Skin T3":"408.8","Skin T4":"394.1"},{"Timestamp":"2026-02-04 23:50","Process Outlet T":"361.4","Fire Rate":"24.44","Process Flow":"79846","Skin T1":"439.8","Skin T2":"425.4","Skin T3":"411.0","Skin T4":"396.0"},{"Timestamp":"2026-02-05 11:50","Process Outlet T":"359.8","Fire Rate":"25.58","Process Flow":"80165","Skin T1":"441.9","Skin T2":"426.2","Skin T3":"411.6","Skin T4":"395.4"},{"Timestamp":"2026-02-05 23:50","Process Outlet T":"358.6","Fire Rate":"24.86","Process Flow":"80670","Skin T1":"437.5","Skin T2":"421.7","Skin T3":"407.4","Skin T4":"393.1"},{"Timestamp":"2026-02-06 11:50","Process Outlet T":"359.8","Fire Rate":"25.59","Process Flow":"79297","Skin T1":"440.0","Skin T2":"427.1","Skin T3":"411.6","Skin T4":"395.3"},{"Timestamp":"2026-02-06 23:50","Process Outlet T":"361.2","Fire Rate":"24.52","Process Flow":"79794","Skin T1":"440.6","Skin T2":"424.8","Skin T3":"409.8","Skin T4":"394.9"},{"Timestamp":"2026-02-07 11:50","Process Outlet T":"360.1","Fire Rate":"25.22","Process Flow":"80128","Skin T1":"440.8","Skin T2":"424.5","Skin T3":"411.1","Skin T4":"395.3"},{"Timestamp":"2026-02-07 23:50","Process Outlet T":"361.1","Fire Rate":"24.16","Process Flow":"80757","Skin T1":"438.7","Skin T2":"423.3","Skin T3":"410.9","Skin T4":"395.5"},{"Timestamp":"2026-02-08 11:50","Process Outlet T":"360.0","Fire Rate":"25.82","Process Flow":"79263","Skin T1":"443.9","Skin T2":"427.7","Skin T3":"411.7","Skin T4":"395.7"},{"Timestamp":"2026-02-08 23:50","Process Outlet T":"359.3","Fire Rate":"24.5","Process Flow":"80270","Skin T1":"438.4","Skin T2":"422.5","Skin T3":"408.6","Skin T4":"394.6"},{"Timestamp":"2026-02-09 11:50","Process Outlet T":"359.5","Fire Rate":"25.66","Process Flow":"79411","Skin T1":"442.8","Skin T2":"426.2","Skin T3":"409.9","Skin T4":"395.8"},{"Timestamp":"2026-02-09 23:50","Process Outlet T":"359.5","Fire Rate":"24.24","Process Flow":"79853","Skin T1":"437.2","Skin T2":"422.8","Skin T3":"408.5","Skin T4":"394.0"},{"Timestamp":"2026-02-10 11:50","Process Outlet T":"361.2","Fire Rate":"25.58","Process Flow":"79446","Skin T1":"443.3","Skin T2":"427.5","Skin T3":"412.5","Skin T4":"398.2"},{"Timestamp":"2026-02-10 23:50","Process Outlet T":"361.2","Fire Rate":"24.31","Process Flow":"79735","Skin T1":"438.9","Skin T2":"424.6","Skin T3":"410.6","Skin T4":"394.2"},{"Timestamp":"2026-02-11 11:50","Process Outlet T":"359.8","Fire Rate":"25.25","Process Flow":"79278","Skin T1":"440.3","Skin T2":"426.2","Skin T3":"410.4","Skin T4":"394.2"},{"Timestamp":"2026-02-11 23:50","Process Outlet T":"359.7","Fire Rate":"24.87","Process Flow":"79691","Skin T1":"438.8","Skin T2":"426.0","Skin T3":"409.7","Skin T4":"395.2"},{"Timestamp":"2026-02-12 11:50","Process Outlet T":"359.4","Fire Rate":"25.44","Process Flow":"79693","Skin T1":"440.8","Skin T2":"427.3","Skin T3":"408.8","Skin T4":"395.5"},{"Timestamp":"2026-02-12 23:50","Process Outlet T":"361.4","Fire Rate":"24.55","Process Flow":"79630","Skin T1":"441.7","Skin T2":"424.0","Skin T3":"412.3","Skin T4":"395.4"},{"Timestamp":"2026-02-13 11:50","Process Outlet T":"359.2","Fire Rate":"25.23","Process Flow":"79774","Skin T1":"439.8","Skin T2":"425.0","Skin T3":"408.0","Skin T4":"396.1"},{"Timestamp":"2026-02-13 23:50","Process Outlet T":"359.9","Fire Rate":"24.34","Process Flow":"80571","Skin T1":"436.0","Skin T2":"424.1","Skin T3":"409.6","Skin T4":"393.9"},{"Timestamp":"2026-02-14 11:50","Process Outlet T":"359.4","Fire Rate":"25.65","Process Flow":"79352","Skin T1":"442.7","Skin T2":"426.0","Skin T3":"409.5","Skin T4":"395.0"},{"Timestamp":"2026-02-14 23:50","Process Outlet T":"360.0","Fire Rate":"24.19","Process Flow":"80315","Skin T1":"438.0","Skin T2":"422.8","Skin T3":"408.9","Skin T4":"393.9"},{"Timestamp":"2026-02-15 11:50","Process Outlet T":"360.5","Fire Rate":"25.24","Process Flow":"79914","Skin T1":"441.3","Skin T2":"426.5","Skin T3":"411.4","Skin T4":"395.4"},{"Timestamp":"2026-02-15 23:50","Process Outlet T":"359.8","Fire Rate":"24.59","Process Flow":"80360","Skin T1":"437.6","Skin T2":"423.2","Skin T3":"409.5","Skin T4":"394.0"},{"Timestamp":"2026-02-16 11:50","Process Outlet T":"359.7","Fire Rate":"25.65","Process Flow":"79459","Skin T1":"441.5","Skin T2":"425.9","Skin T3":"410.5","Skin T4":"396.9"},{"Timestamp":"2026-02-16 23:50","Process Outlet T":"361.4","Fire Rate":"24.2","Process Flow":"80153","Skin T1":"439.6","Skin T2":"424.7","Skin T3":"410.3","Skin T4":"396.1"},{"Timestamp":"2026-02-17 11:50","Process Outlet T":"361.1","Fire Rate":"25.81","Process Flow":"80279","Skin T1":"442.7","Skin T2":"428.0","Skin T3":"412.9","Skin T4":"395.8"},{"Timestamp":"2026-02-17 23:50","Process Outlet T":"360.4","Fire Rate":"24.6","Process Flow":"80832","Skin T1":"440.3","Skin T2":"424.2","Skin T3":"409.1","Skin T4":"395.9"},{"Timestamp":"2026-02-18 11:50","Process Outlet T":"358.9","Fire Rate":"25.82","Process Flow":"79326","Skin T1":"442.4","Skin T2":"426.7","Skin T3":"410.4","Skin T4":"396.2"},{"Timestamp":"2026-02-18 23:50","Process Outlet T":"360.4","Fire Rate":"24.68","Process Flow":"79826","Skin T1":"439.7","Skin T2":"425.8","Skin T3":"411.3","Skin T4":"394.2"},{"Timestamp":"2026-02-19 11:50","Process Outlet T":"359.4","Fire Rate":"25.17","Process Flow":"79695","Skin T1":"441.5","Skin T2":"425.0","Skin T3":"409.4","Skin T4":"394.2"},{"Timestamp":"2026-02-19 23:50","Process Outlet T":"359.8","Fire Rate":"24.69","Process Flow":"80273","Skin T1":"439.2","Skin T2":"424.0","Skin T3":"410.5","Skin T4":"393.2"},{"Timestamp":"2026-02-20 11:50","Process Outlet T":"360.2","Fire Rate":"25.52","Process Flow":"80220","Skin T1":"441.7","Skin T2":"426.6","Skin T3":"410.4","Skin T4":"397.4"},{"Timestamp":"2026-02-20 23:50","Process Outlet T":"361.1","Fire Rate":"24.73","Process Flow":"80669","Skin T1":"440.1","Skin T2":"425.8","Skin T3":"411.5","Skin T4":"396.5"},{"Timestamp":"2026-02-21 11:50","Process Outlet T":"360.4","Fire Rate":"25.78","Process Flow":"79673","Skin T1":"443.7","Skin T2":"428.8","Skin T3":"413.2","Skin T4":"394.7"},{"Timestamp":"2026-02-21 23:50","Process Outlet T":"358.6","Fire Rate":"24.75","Process Flow":"80696","Skin T1":"437.4","Skin T2":"422.0","Skin T3":"409.2","Skin T4":"392.5"},{"Timestamp":"2026-02-22 01:50","Process Outlet T":"359.3","Fire Rate":"24.78","Process Flow":"80189","Skin T1":"438.8","Skin T2":"423.4","Skin T3":"410.0","Skin T4":"392.9"},{"Timestamp":"2026-02-22 03:50","Process Outlet T":"359.9","Fire Rate":"24.44","Process Flow":"79836","Skin T1":"438.2","Skin T2":"425.2","Skin T3":"409.1","Skin T4":"394.5"},{"Timestamp":"2026-02-22 05:50","Process Outlet T":"361.1","Fire Rate":"24.64","Process Flow":"79009","Skin T1":"441.6","Skin T2":"425.9","Skin T3":"410.5","Skin T4":"395.4"},{"Timestamp":"2026-02-22 07:50","Process Outlet T":"361.3","Fire Rate":"25.49","Process Flow":"79273","Skin T1":"444.8","Skin T2":"429.2","Skin T3":"413.4","Skin T4":"399.0"},{"Timestamp":"2026-02-22 09:50","Process Outlet T":"359.8","Fire Rate":"25.18","Process Flow":"78936","Skin T1":"441.1","Skin T2":"425.3","Skin T3":"409.9","Skin T4":"394.8"},{"Timestamp":"2026-02-22 11:50","Process Outlet T":"359.3","Fire Rate":"25.4","Process Flow":"79890","Skin T1":"440.5","Skin T2":"425.2","Skin T3":"410.9","Skin T4":"394.4"},{"Timestamp":"2026-02-22 13:50","Process Outlet T":"360.5","Fire Rate":"25.65","Process Flow":"80517","Skin T1":"441.6","Skin T2":"426.8","Skin T3":"410.9","Skin T4":"395.5"},{"Timestamp":"2026-02-22 15:50","Process Outlet T":"360.6","Fire Rate":"25.21","Process Flow":"81014","Skin T1":"440.2","Skin T2":"426.1","Skin T3":"409.8","Skin T4":"396.0"},{"Timestamp":"2026-02-22 17:50","Process Outlet T":"359.8","Fire Rate":"24.98","Process Flow":"80291","Skin T1":"440.7","Skin T2":"424.2","Skin T3":"410.5","Skin T4":"394.0"},{"Timestamp":"2026-02-22 19:50","Process Outlet T":"358.6","Fire Rate":"24.72","Process Flow":"80834","Skin T1":"437.1","Skin T2":"423.3","Skin T3":"406.7","Skin T4":"392.4"},{"Timestamp":"2026-02-22 21:50","Process Outlet T":"359.2","Fire Rate":"24.62","Process Flow":"80491","Skin T1":"436.2","Skin T2":"423.4","Skin T3":"408.5","Skin T4":"393.2"},{"Timestamp":"2026-02-22 23:50","Process Outlet T":"360.4","Fire Rate":"24.21","Process Flow":"80226","Skin T1":"437.5","Skin T2":"424.9","Skin T3":"409.1","Skin T4":"393.3"},{"Timestamp":"2026-02-23 01:50","Process Outlet T":"358.6","Fire Rate":"24.31","Process Flow":"79408","Skin T1":"437.4","Skin T2":"423.5","Skin T3":"408.0","Skin T4":"392.8"},{"Timestamp":"2026-02-23 03:50","Process Outlet T":"359.1","Fire Rate":"24.58","Process Flow":"79599","Skin T1":"438.1","Skin T2":"422.7","Skin T3":"408.7","Skin T4":"395.0"},{"Timestamp":"2026-02-23 05:50","Process Outlet T":"360.8","Fire Rate":"24.5","Process Flow":"79545","Skin T1":"440.6","Skin T2":"425.6","Skin T3":"411.2","Skin T4":"397.2"},{"Timestamp":"2026-02-23 07:50","Process Outlet T":"359.3","Fire Rate":"25.14","Process Flow":"78657","Skin T1":"441.3","Skin T2":"424.8","Skin T3":"410.6","Skin T4":"393.8"},{"Timestamp":"2026-02-23 09:50","Process Outlet T":"361.3","Fire Rate":"25.72","Process Flow":"79555","Skin T1":"444.4","Skin T2":"427.5","Skin T3":"412.6","Skin T4":"396.4"},{"Timestamp":"2026-02-23 11:50","Process Outlet T":"361.1","Fire Rate":"25.74","Process Flow":"79854","Skin T1":"443.2","Skin T2":"426.9","Skin T3":"412.4","Skin T4":"397.7"},{"Timestamp":"2026-02-23 13:50","Process Outlet T":"360.1","Fire Rate":"25.59","Process Flow":"80548","Skin T1":"440.8","Skin T2":"425.5","Skin T3":"411.4","Skin T4":"395.9"},{"Timestamp":"2026-02-23 15:50","Process Outlet T":"360.1","Fire Rate":"25.18","Process Flow":"80333","Skin T1":"440.8","Skin T2":"425.8","Skin T3":"409.9","Skin T4":"394.1"},{"Timestamp":"2026-02-23 17:50","Process Outlet T":"360.1","Fire Rate":"24.8","Process Flow":"80653","Skin T1":"438.7","Skin T2":"424.6","Skin T3":"408.0","Skin T4":"395.5"},{"Timestamp":"2026-02-23 19:50","Process Outlet T":"361.0","Fire Rate":"24.93","Process Flow":"81025","Skin T1":"440.2","Skin T2":"424.5","Skin T3":"411.2","Skin T4":"395.7"},{"Timestamp":"2026-02-23 21:50","Process Outlet T":"361.3","Fire Rate":"24.83","Process Flow":"81021","Skin T1":"439.0","Skin T2":"426.0","Skin T3":"409.6","Skin T4":"395.5"},{"Timestamp":"2026-02-23 23:50","Process Outlet T":"359.8","Fire Rate":"24.31","Process Flow":"79846","Skin T1":"439.0","Skin T2":"423.7","Skin T3":"408.5","Skin T4":"393.4"},{"Timestamp":"2026-02-24 01:50","Process Outlet T":"358.9","Fire Rate":"24.27","Process Flow":"79751","Skin T1":"437.2","Skin T2":"422.5","Skin T3":"407.1","Skin T4":"393.9"},{"Timestamp":"2026-02-24 03:50","Process Outlet T":"358.9","Fire Rate":"24.3","Process Flow":"79615","Skin T1":"437.3","Skin T2":"422.9","Skin T3":"407.7","Skin T4":"393.7"},{"Timestamp":"2026-02-24 05:50","Process Outlet T":"359.6","Fire Rate":"24.74","Process Flow":"79558","Skin T1":"439.5","Skin T2":"423.0","Skin T3":"409.5","Skin T4":"394.9"},{"Timestamp":"2026-02-24 07:50","Process Outlet T":"361.4","Fire Rate":"24.77","Process Flow":"79277","Skin T1":"440.9","Skin T2":"427.5","Skin T3":"411.7","Skin T4":"395.3"},{"Timestamp":"2026-02-24 09:50","Process Outlet T":"359.1","Fire Rate":"25.55","Process Flow":"80005","Skin T1":"441.1","Skin T2":"425.4","Skin T3":"410.9","Skin T4":"395.6"},{"Timestamp":"2026-02-24 11:50","Process Outlet T":"360.6","Fire Rate":"25.53","Process Flow":"79432","Skin T1":"442.5","Skin T2":"426.7","Skin T3":"410.7","Skin T4":"395.6"},{"Timestamp":"2026-02-24 13:50","Process Outlet T":"361.3","Fire Rate":"25.19","Process Flow":"80616","Skin T1":"441.6","Skin T2":"426.5","Skin T3":"410.9","Skin T4":"397.5"},{"Timestamp":"2026-02-24 15:50","Process Outlet T":"360.6","Fire Rate":"25.7","Process Flow":"80432","Skin T1":"443.3","Skin T2":"427.4","Skin T3":"411.3","Skin T4":"396.0"},{"Timestamp":"2026-02-24 17:50","Process Outlet T":"360.3","Fire Rate":"25.33","Process Flow":"81225","Skin T1":"441.9","Skin T2":"426.9","Skin T3":"410.4","Skin T4":"394.6"},{"Timestamp":"2026-02-24 19:50","Process Outlet T":"360.0","Fire Rate":"24.82","Process Flow":"80605","Skin T1":"438.3","Skin T2":"425.7","Skin T3":"409.7","Skin T4":"394.3"},{"Timestamp":"2026-02-24 21:50","Process Outlet T":"360.9","Fire Rate":"24.99","Process Flow":"80740","Skin T1":"440.2","Skin T2":"424.7","Skin T3":"410.4","Skin T4":"393.7"},{"Timestamp":"2026-02-24 23:50","Process Outlet T":"360.1","Fire Rate":"24.35","Process Flow":"80602","Skin T1":"437.2","Skin T2":"423.6","Skin T3":"408.8","Skin T4":"393.6"},{"Timestamp":"2026-02-25 01:50","Process Outlet T":"358.8","Fire Rate":"24.78","Process Flow":"80215","Skin T1":"438.6","Skin T2":"422.9","Skin T3":"407.4","Skin T4":"393.8"},{"Timestamp":"2026-02-25 03:50","Process Outlet T":"361.0","Fire Rate":"24.56","Process Flow":"78835","Skin T1":"441.2","Skin T2":"426.4","Skin T3":"411.2","Skin T4":"395.3"},{"Timestamp":"2026-02-25 05:50","Process Outlet T":"359.4","Fire Rate":"25.15","Process Flow":"79482","Skin T1":"442.2","Skin T2":"425.2","Skin T3":"411.0","Skin T4":"395.4"},{"Timestamp":"2026-02-25 07:50","Process Outlet T":"360.6","Fire Rate":"25.12","Process Flow":"79554","Skin T1":"440.8","Skin T2":"425.5","Skin T3":"411.1","Skin T4":"395.6"},{"Timestamp":"2026-02-25 09:50","Process Outlet T":"359.4","Fire Rate":"25.14","Process Flow":"79678","Skin T1":"439.4","Skin T2":"424.6","Skin T3":"409.1","Skin T4":"394.6"},{"Timestamp":"2026-02-25 11:50","Process Outlet T":"360.6","Fire Rate":"25.67","Process Flow":"79576","Skin T1":"442.7","Skin T2":"428.0","Skin T3":"412.3","Skin T4":"396.9"},{"Timestamp":"2026-02-25 13:50","Process Outlet T":"360.8","Fire Rate":"25.19","Process Flow":"80253","Skin T1":"441.4","Skin T2":"426.6","Skin T3":"409.7","Skin T4":"396.1"},{"Timestamp":"2026-02-25 15:50","Process Outlet T":"359.4","Fire Rate":"25.72","Process Flow":"80597","Skin T1":"441.3","Skin T2":"425.9","Skin T3":"410.4","Skin T4":"395.5"},{"Timestamp":"2026-02-25 17:50","Process Outlet T":"359.4","Fire Rate":"24.76","Process Flow":"80816","Skin T1":"439.2","Skin T2":"423.3","Skin T3":"408.5","Skin T4":"393.5"},{"Timestamp":"2026-02-25 19:50","Process Outlet T":"361.1","Fire Rate":"25.15","Process Flow":"80760","Skin T1":"440.2","Skin T2":"425.6","Skin T3":"410.5","Skin T4":"396.2"},{"Timestamp":"2026-02-25 21:50","Process Outlet T":"359.9","Fire Rate":"24.31","Process Flow":"81134","Skin T1":"437.8","Skin T2":"422.2","Skin T3":"409.4","Skin T4":"394.3"},{"Timestamp":"2026-02-25 23:50","Process Outlet T":"360.2","Fire Rate":"24.19","Process Flow":"79756","Skin T1":"437.6","Skin T2":"426.2","Skin T3":"410.1","Skin T4":"395.3"},{"Timestamp":"2026-02-26 01:50","Process Outlet T":"359.2","Fire Rate":"24.6","Process Flow":"80164","Skin T1":"437.3","Skin T2":"423.3","Skin T3":"407.1","Skin T4":"394.3"},{"Timestamp":"2026-02-26 03:50","Process Outlet T":"360.4","Fire Rate":"25.01","Process Flow":"79186","Skin T1":"440.2","Skin T2":"425.2","Skin T3":"411.4","Skin T4":"395.5"},{"Timestamp":"2026-02-26 05:50","Process Outlet T":"359.0","Fire Rate":"24.65","Process Flow":"79430","Skin T1":"438.8","Skin T2":"424.0","Skin T3":"409.7","Skin T4":"393.9"},{"Timestamp":"2026-02-26 07:50","Process Outlet T":"359.2","Fire Rate":"25.2","Process Flow":"78962","Skin T1":"440.4","Skin T2":"424.2","Skin T3":"409.0","Skin T4":"395.2"},{"Timestamp":"2026-02-26 09:50","Process Outlet T":"360.4","Fire Rate":"25.68","Process Flow":"79800","Skin T1":"441.4","Skin T2":"425.4","Skin T3":"410.7","Skin T4":"396.7"},{"Timestamp":"2026-02-26 11:50","Process Outlet T":"360.9","Fire Rate":"25.6","Process Flow":"80314","Skin T1":"442.8","Skin T2":"427.3","Skin T3":"411.4","Skin T4":"397.8"},{"Timestamp":"2026-02-26 13:50","Process Outlet T":"358.9","Fire Rate":"25.54","Process Flow":"79935","Skin T1":"440.0","Skin T2":"424.0","Skin T3":"410.8","Skin T4":"394.3"},{"Timestamp":"2026-02-26 15:50","Process Outlet T":"358.7","Fire Rate":"25.35","Process Flow":"80024","Skin T1":"439.0","Skin T2":"424.8","Skin T3":"409.3","Skin T4":"394.5"},{"Timestamp":"2026-02-26 17:50","Process Outlet T":"360.2","Fire Rate":"25.48","Process Flow":"81206","Skin T1":"443.6","Skin T2":"424.6","Skin T3":"410.2","Skin T4":"394.8"},{"Timestamp":"2026-02-26 19:50","Process Outlet T":"359.9","Fire Rate":"24.53","Process Flow":"81103","Skin T1":"437.0","Skin T2":"421.9","Skin T3":"409.2","Skin T4":"395.0"},{"Timestamp":"2026-02-26 21:50","Process Outlet T":"358.8","Fire Rate":"24.75","Process Flow":"80555","Skin T1":"437.5","Skin T2":"423.6","Skin T3":"407.5","Skin T4":"392.0"},{"Timestamp":"2026-02-26 23:50","Process Outlet T":"359.4","Fire Rate":"24.39","Process Flow":"80455","Skin T1":"439.0","Skin T2":"422.5","Skin T3":"407.4","Skin T4":"393.3"},{"Timestamp":"2026-02-27 01:50","Process Outlet T":"361.4","Fire Rate":"24.38","Process Flow":"79567","Skin T1":"439.5","Skin T2":"426.0","Skin T3":"411.8","Skin T4":"395.8"},{"Timestamp":"2026-02-27 03:50","Process Outlet T":"359.1","Fire Rate":"24.68","Process Flow":"79324","Skin T1":"438.1","Skin T2":"425.0","Skin T3":"408.1","Skin T4":"393.1"},{"Timestamp":"2026-02-27 05:50","Process Outlet T":"361.2","Fire Rate":"24.65","Process Flow":"79289","Skin T1":"439.9","Skin T2":"426.6","Skin T3":"412.7","Skin T4":"397.6"},{"Timestamp":"2026-02-27 07:50","Process Outlet T":"359.0","Fire Rate":"25.21","Process Flow":"78896","Skin T1":"439.6","Skin T2":"425.0","Skin T3":"412.1","Skin T4":"396.1"},{"Timestamp":"2026-02-27 09:50","Process Outlet T":"358.9","Fire Rate":"25.67","Process Flow":"79385","Skin T1":"441.7","Skin T2":"425.0","Skin T3":"410.2","Skin T4":"394.0"},{"Timestamp":"2026-02-27 11:50","Process Outlet T":"361.4","Fire Rate":"25.31","Process Flow":"80220","Skin T1":"442.2","Skin T2":"428.0","Skin T3":"410.5","Skin T4":"397.9"},{"Timestamp":"2026-02-27 13:50","Process Outlet T":"361.1","Fire Rate":"25.49","Process Flow":"80693","Skin T1":"441.7","Skin T2":"428.1","Skin T3":"410.0","Skin T4":"397.4"},{"Timestamp":"2026-02-27 15:50","Process Outlet T":"359.4","Fire Rate":"25.36","Process Flow":"80978","Skin T1":"439.3","Skin T2":"425.6","Skin T3":"410.5","Skin T4":"394.5"},{"Timestamp":"2026-02-27 17:50","Process Outlet T":"359.6","Fire Rate":"24.86","Process Flow":"80822","Skin T1":"437.8","Skin T2":"423.5","Skin T3":"408.3","Skin T4":"394.4"},{"Timestamp":"2026-02-27 19:50","Process Outlet T":"360.2","Fire Rate":"24.64","Process Flow":"81027","Skin T1":"438.8","Skin T2":"425.3","Skin T3":"410.5","Skin T4":"394.9"},{"Timestamp":"2026-02-27 21:50","Process Outlet T":"359.7","Fire Rate":"24.8","Process Flow":"80967","Skin T1":"437.8","Skin T2":"422.5","Skin T3":"409.9","Skin T4":"394.1"},{"Timestamp":"2026-02-28 00:00","Process Outlet T":"360.3","Fire Rate":"24.16","Process Flow":"80002","Skin T1":"439.4","Skin T2":"422.4","Skin T3":"408.1","Skin T4":"394.7"},{"Timestamp":"2026-02-28 00:30","Process Outlet T":"359.7","Fire Rate":"24.47","Process Flow":"80284","Skin T1":"438.1","Skin T2":"423.2","Skin T3":"406.8","Skin T4":"394.5"},{"Timestamp":"2026-02-28 01:00","Process Outlet T":"360.4","Fire Rate":"24.4","Process Flow":"80038","Skin T1":"440.0","Skin T2":"423.0","Skin T3":"410.0","Skin T4":"394.2"},{"Timestamp":"2026-02-28 01:30","Process Outlet T":"360.8","Fire Rate":"24.38","Process Flow":"80072","Skin T1":"439.4","Skin T2":"424.4","Skin T3":"410.9","Skin T4":"395.6"},{"Timestamp":"2026-02-28 02:00","Process Outlet T":"360.7","Fire Rate":"24.88","Process Flow":"80233","Skin T1":"440.1","Skin T2":"425.6","Skin T3":"409.4","Skin T4":"394.4"},{"Timestamp":"2026-02-28 02:30","Process Outlet T":"361.2","Fire Rate":"24.53","Process Flow":"79847","Skin T1":"441.6","Skin T2":"425.8","Skin T3":"410.4","Skin T4":"396.5"},{"Timestamp":"2026-02-28 03:00","Process Outlet T":"360.2","Fire Rate":"24.38","Process Flow":"79473","Skin T1":"439.3","Skin T2":"423.9","Skin T3":"411.0","Skin T4":"395.5"},{"Timestamp":"2026-02-28 03:30","Process Outlet T":"361.2","Fire Rate":"24.73","Process Flow":"79104","Skin T1":"441.9","Skin T2":"427.0","Skin T3":"411.3","Skin T4":"396.9"},{"Timestamp":"2026-02-28 04:00","Process Outlet T":"361.2","Fire Rate":"24.39","Process Flow":"79693","Skin T1":"439.8","Skin T2":"424.8","Skin T3":"409.8","Skin T4":"395.9"},{"Timestamp":"2026-02-28 04:30","Process Outlet T":"359.8","Fire Rate":"24.82","Process Flow":"79483","Skin T1":"439.9","Skin T2":"426.4","Skin T3":"410.1","Skin T4":"395.6"},{"Timestamp":"2026-02-28 05:00","Process Outlet T":"360.2","Fire Rate":"24.86","Process Flow":"78894","Skin T1":"438.7","Skin T2":"424.7","Skin T3":"410.0","Skin T4":"397.6"},{"Timestamp":"2026-02-28 05:30","Process Outlet T":"360.2","Fire Rate":"24.99","Process Flow":"78941","Skin T1":"440.7","Skin T2":"424.8","Skin T3":"411.9","Skin T4":"396.0"},{"Timestamp":"2026-02-28 06:00","Process Outlet T":"359.4","Fire Rate":"25.0","Process Flow":"79712","Skin T1":"440.1","Skin T2":"423.7","Skin T3":"409.0","Skin T4":"395.5"},{"Timestamp":"2026-02-28 06:30","Process Outlet T":"360.6","Fire Rate":"25.09","Process Flow":"79425","Skin T1":"440.7","Skin T2":"425.1","Skin T3":"410.0","Skin T4":"394.8"},{"Timestamp":"2026-02-28 07:00","Process Outlet T":"359.8","Fire Rate":"25.24","Process Flow":"78985","Skin T1":"440.3","Skin T2":"425.5","Skin T3":"411.4","Skin T4":"395.9"},{"Timestamp":"2026-02-28 07:30","Process Outlet T":"358.9","Fire Rate":"25.32","Process Flow":"78816","Skin T1":"438.8","Skin T2":"425.0","Skin T3":"408.4","Skin T4":"394.5"},{"Timestamp":"2026-02-28 08:00","Process Outlet T":"360.9","Fire Rate":"25.5","Process Flow":"78998","Skin T1":"441.8","Skin T2":"428.0","Skin T3":"412.4","Skin T4":"396.2"},{"Timestamp":"2026-02-28 08:30","Process Outlet T":"359.0","Fire Rate":"24.96","Process Flow":"79894","Skin T1":"440.7","Skin T2":"423.8","Skin T3":"408.7","Skin T4":"391.8"},{"Timestamp":"2026-02-28 09:00","Process Outlet T":"359.6","Fire Rate":"25.71","Process Flow":"79821","Skin T1":"441.8","Skin T2":"426.2","Skin T3":"410.1","Skin T4":"395.4"},{"Timestamp":"2026-02-28 09:30","Process Outlet T":"360.2","Fire Rate":"25.49","Process Flow":"79653","Skin T1":"442.8","Skin T2":"424.9","Skin T3":"411.8","Skin T4":"396.4"},{"Timestamp":"2026-02-28 10:00","Process Outlet T":"360.2","Fire Rate":"25.07","Process Flow":"80089","Skin T1":"441.0","Skin T2":"425.1","Skin T3":"411.7","Skin T4":"395.9"},{"Timestamp":"2026-02-28 10:30","Process Outlet T":"359.7","Fire Rate":"25.75","Process Flow":"79348","Skin T1":"443.6","Skin T2":"428.4","Skin T3":"411.1","Skin T4":"396.8"},{"Timestamp":"2026-02-28 11:00","Process Outlet T":"358.9","Fire Rate":"25.18","Process Flow":"80287","Skin T1":"438.2","Skin T2":"424.6","Skin T3":"409.1","Skin T4":"392.2"},{"Timestamp":"2026-02-28 11:30","Process Outlet T":"359.0","Fire Rate":"25.42","Process Flow":"80102","Skin T1":"439.9","Skin T2":"425.2","Skin T3":"408.9","Skin T4":"394.6"},{"Timestamp":"2026-02-28 12:00","Process Outlet T":"359.6","Fire Rate":"25.85","Process Flow":"79401","Skin T1":"440.7","Skin T2":"427.6","Skin T3":"411.6","Skin T4":"395.6"},{"Timestamp":"2026-02-28 12:30","Process Outlet T":"361.4","Fire Rate":"25.64","Process Flow":"80056","Skin T1":"442.7","Skin T2":"428.5","Skin T3":"412.6","Skin T4":"397.5"},{"Timestamp":"2026-02-28 13:00","Process Outlet T":"360.5","Fire Rate":"25.75","Process Flow":"80148","Skin T1":"441.8","Skin T2":"426.3","Skin T3":"413.1","Skin T4":"396.5"},{"Timestamp":"2026-02-28 13:30","Process Outlet T":"360.2","Fire Rate":"25.29","Process Flow":"79727","Skin T1":"442.6","Skin T2":"426.7","Skin T3":"411.1","Skin T4":"396.2"},{"Timestamp":"2026-02-28 14:00","Process Outlet T":"359.0","Fire Rate":"25.72","Process Flow":"80179","Skin T1":"440.9","Skin T2":"425.5","Skin T3":"410.4","Skin T4":"394.5"},{"Timestamp":"2026-02-28 14:30","Process Outlet T":"359.1","Fire Rate":"25.15","Process Flow":"80079","Skin T1":"439.5","Skin T2":"424.3","Skin T3":"410.8","Skin T4":"394.4"},{"Timestamp":"2026-02-28 15:00","Process Outlet T":"359.1","Fire Rate":"25.15","Process Flow":"80338","Skin T1":"440.6","Skin T2":"424.7","Skin T3":"408.0","Skin T4":"394.0"},{"Timestamp":"2026-02-28 15:30","Process Outlet T":"360.0","Fire Rate":"25.34","Process Flow":"80924","Skin T1":"441.1","Skin T2":"425.9","Skin T3":"410.5","Skin T4":"395.1"},{"Timestamp":"2026-02-28 16:00","Process Outlet T":"360.1","Fire Rate":"25.46","Process Flow":"81166","Skin T1":"438.5","Skin T2":"426.0","Skin T3":"411.2","Skin T4":"395.6"},{"Timestamp":"2026-02-28 16:30","Process Outlet T":"360.0","Fire Rate":"25.18","Process Flow":"80933","Skin T1":"440.2","Skin T2":"424.7","Skin T3":"410.9","Skin T4":"395.5"},{"Timestamp":"2026-02-28 17:00","Process Outlet T":"360.4","Fire Rate":"24.8","Process Flow":"80481","Skin T1":"439.0","Skin T2":"424.6","Skin T3":"410.9","Skin T4":"395.0"},{"Timestamp":"2026-02-28 17:30","Process Outlet T":"358.9","Fire Rate":"25.09","Process Flow":"80908","Skin T1":"438.1","Skin T2":"422.1","Skin T3":"407.9","Skin T4":"392.6"},{"Timestamp":"2026-02-28 18:00","Process Outlet T":"359.9","Fire Rate":"25.17","Process Flow":"80431","Skin T1":"440.3","Skin T2":"425.8","Skin T3":"409.3","Skin T4":"395.2"},{"Timestamp":"2026-02-28 18:30","Process Outlet T":"360.5","Fire Rate":"24.7","Process Flow":"80705","Skin T1":"439.0","Skin T2":"424.9","Skin T3":"410.0","Skin T4":"394.9"},{"Timestamp":"2026-02-28 19:00","Process Outlet T":"358.8","Fire Rate":"25.12","Process Flow":"80247","Skin T1":"439.1","Skin T2":"422.6","Skin T3":"408.0","Skin T4":"393.6"},{"Timestamp":"2026-02-28 19:30","Process Outlet T":"358.9","Fire Rate":"24.92","Process Flow":"80552","Skin T1":"437.8","Skin T2":"424.5","Skin T3":"408.6","Skin T4":"392.1"},{"Timestamp":"2026-02-28 20:00","Process Outlet T":"360.3","Fire Rate":"24.91","Process Flow":"81297","Skin T1":"438.6","Skin T2":"425.3","Skin T3":"409.9","Skin T4":"396.0"},{"Timestamp":"2026-02-28 20:30","Process Outlet T":"361.0","Fire Rate":"24.55","Process Flow":"80187","Skin T1":"439.0","Skin T2":"426.1","Skin T3":"409.0","Skin T4":"394.9"},{"Timestamp":"2026-02-28 21:00","Process Outlet T":"360.9","Fire Rate":"24.9","Process Flow":"81177","Skin T1":"439.1","Skin T2":"424.4","Skin T3":"412.1","Skin T4":"395.8"},{"Timestamp":"2026-02-28 21:30","Process Outlet T":"359.1","Fire Rate":"24.89","Process Flow":"80265","Skin T1":"438.6","Skin T2":"423.2","Skin T3":"408.9","Skin T4":"394.0"},{"Timestamp":"2026-02-28 22:00","Process Outlet T":"359.7","Fire Rate":"24.84","Process Flow":"80485","Skin T1":"439.9","Skin T2":"425.1","Skin T3":"410.7","Skin T4":"394.7"},{"Timestamp":"2026-02-28 22:10","Process Outlet T":"359.5","Fire Rate":"24.36","Process Flow":"80296","Skin T1":"437.0","Skin T2":"424.1","Skin T3":"408.7","Skin T4":"392.8"},{"Timestamp":"2026-02-28 22:20","Process Outlet T":"359.0","Fire Rate":"24.26","Process Flow":"79824","Skin T1":"436.6","Skin T2":"422.0","Skin T3":"407.9","Skin T4":"394.5"},{"Timestamp":"2026-02-28 22:30","Process Outlet T":"359.4","Fire Rate":"24.56","Process Flow":"80325","Skin T1":"438.2","Skin T2":"423.0","Skin T3":"408.0","Skin T4":"394.1"},{"Timestamp":"2026-02-28 22:40","Process Outlet T":"360.5","Fire Rate":"24.7","Process Flow":"80382","Skin T1":"440.4","Skin T2":"425.0","Skin T3":"409.9","Skin T4":"395.1"},{"Timestamp":"2026-02-28 22:50","Process Outlet T":"359.0","Fire Rate":"24.42","Process Flow":"80028","Skin T1":"437.7","Skin T2":"423.6","Skin T3":"409.5","Skin T4":"393.5"},{"Timestamp":"2026-02-28 23:00","Process Outlet T":"360.6","Fire Rate":"24.28","Process Flow":"80053","Skin T1":"437.4","Skin T2":"424.2","Skin T3":"409.7","Skin T4":"394.6"},{"Timestamp":"2026-02-28 23:10","Process Outlet T":"358.6","Fire Rate":"24.78","Process Flow":"79619","Skin T1":"440.0","Skin T2":"422.8","Skin T3":"407.7","Skin T4":"393.1"},{"Timestamp":"2026-02-28 23:20","Process Outlet T":"358.9","Fire Rate":"24.67","Process Flow":"80101","Skin T1":"438.9","Skin T2":"423.4","Skin T3":"408.8","Skin T4":"392.5"},{"Timestamp":"2026-02-28 23:30","Process Outlet T":"358.8","Fire Rate":"24.76","Process Flow":"80745","Skin T1":"438.2","Skin T2":"422.5","Skin T3":"407.4","Skin T4":"392.9"},{"Timestamp":"2026-02-28 23:40","Process Outlet T":"359.5","Fire Rate":"24.44","Process Flow":"79963","Skin T1":"438.1","Skin T2":"424.0","Skin T3":"408.4","Skin T4":"394.0"},{"Timestamp":"2026-02-28 23:50","Process Outlet T":"359.6","Fire Rate":"24.52","Process Flow":"80727","Skin T1":"437.8","Skin T2":"421.8","Skin T3":"408.8","Skin T4":"393.3"}];
 
 // ═══════════════════════════════════════════════════════
 // WIRING
@@ -435,6 +552,16 @@ document.getElementById("loadDemoBtn").addEventListener("click",()=>{currentRows
 
 // Recalculate
 document.getElementById("recalcBtn").addEventListener("click",runProcess);
+document.getElementById("restoreDefaultsBtn").addEventListener("click",function(){document.getElementById("setT1Offset").value="80.0";
+document.getElementById("setT2Offset").value="65.0";
+document.getElementById("setT3Offset").value="50.0";
+document.getElementById("setT4Offset").value="35.0";
+document.getElementById("setFlowRef").value="80000";
+document.getElementById("setFireRef").value="25.0";
+document.getElementById("limAdvisory").value="446";
+document.getElementById("limAlarm").value="475";
+document.getElementById("limTrip").value="550";
+document.getElementById("limAdvDisplay").value="750";runProcess();});
 document.querySelectorAll(".config-input").forEach(inp=>inp.addEventListener("change",runProcess));
 
 // Export
@@ -464,6 +591,115 @@ document.getElementById("manualPdf").addEventListener("click",function(){
   win.document.close();
   setTimeout(function(){win.print();},400);
 });
+</script>
+
+<div class="kbd-overlay" id="kbdOverlay">
+  <div class="kbd-modal">
+    <h3>Keyboard Shortcuts <button class="kbd-close" onclick="toggleKbd()">\u00d7</button></h3>
+    <div class="kbd-group">
+      <h4>Navigation</h4>
+      <div class="kbd-row"><span>Go to Home</span><div class="kbd-keys"><kbd>G</kbd><kbd>H</kbd></div></div>
+      <div class="kbd-row"><span>Go to Dashboards</span><div class="kbd-keys"><kbd>G</kbd><kbd>D</kbd></div></div>
+      <div class="kbd-row"><span>Go to Settings</span><div class="kbd-keys"><kbd>G</kbd><kbd>S</kbd></div></div>
+      <div class="kbd-row"><span>Go to Alerts</span><div class="kbd-keys"><kbd>G</kbd><kbd>A</kbd></div></div>
+    </div>
+    <div class="kbd-group">
+      <h4>Actions</h4>
+      <div class="kbd-row"><span>Show shortcuts</span><div class="kbd-keys"><kbd>?</kbd></div></div>
+      <div class="kbd-row"><span>Close modal</span><div class="kbd-keys"><kbd>Esc</kbd></div></div>
+    </div>
+  </div>
+</div>
+<script>
+// ═══════════════════════════════════════════════════════
+// STANDARD UI WIRING (shared across all dashboards)
+// ═══════════════════════════════════════════════════════
+
+// Tab switching
+document.querySelectorAll(".tab").forEach(function(t){
+  t.addEventListener("click",function(){
+    document.querySelectorAll(".tab").forEach(function(x){x.classList.remove("active")});
+    document.querySelectorAll(".tab-panel").forEach(function(x){x.classList.remove("active")});
+    t.classList.add("active");
+    var panel=document.getElementById("panel-"+t.dataset.tab);
+    if(panel) panel.classList.add("active");
+  });
+});
+
+// Time range pills — filter displayed chart data
+(function(){
+  var allRows=null;
+  document.querySelectorAll(".time-pill").forEach(function(pill){
+    pill.addEventListener("click",function(){
+      document.querySelectorAll(".time-pill").forEach(function(p){p.classList.remove("active")});
+      pill.classList.add("active");
+      if(!currentRows||!currentRows.length) return;
+      var range=pill.dataset.range;
+      if(!allRows) allRows=currentRows.slice();
+      var ms={"1h":3600000,"24h":86400000,"7d":7*86400000,"30d":30*86400000};
+      var span=ms[range];
+      if(!span){currentRows=allRows;runProcess();return;}
+      var tsKey=null;
+      var tsNames=["Timestamp","timestamp","Date","DateTime","Time"];
+      for(var i=0;i<tsNames.length;i++){if(allRows[0][tsNames[i]]!==undefined){tsKey=tsNames[i];break;}}
+      if(!tsKey){currentRows=allRows;runProcess();return;}
+      var maxT=0;
+      allRows.forEach(function(r){var d=parseTs(r[tsKey]);if(d&&d.getTime()>maxT)maxT=d.getTime();});
+      if(!maxT){currentRows=allRows;runProcess();return;}
+      var cutoff=maxT-span;
+      currentRows=allRows.filter(function(r){var d=parseTs(r[tsKey]);return d&&d.getTime()>=cutoff;});
+      if(!currentRows.length) currentRows=allRows;
+      runProcess();
+    });
+  });
+})();
+
+// Config bar toggle
+(function(){
+  var header=document.querySelector(".config-bar-header");
+  var body=document.getElementById("configBody");
+  var toggle=document.getElementById("configToggle");
+  if(header&&body){
+    header.addEventListener("click",function(){
+      body.classList.toggle("collapsed");
+      if(toggle) toggle.textContent=body.classList.contains("collapsed")?"\u25be":"\u25b4";
+    });
+  }
+})();
+
+// Keyboard shortcuts
+function toggleKbd(){document.getElementById("kbdOverlay").classList.toggle("open")}
+(function(){
+  var g=false,t=null;
+  document.addEventListener("keydown",function(e){
+    if(e.target.tagName==="INPUT"||e.target.tagName==="SELECT"||e.target.tagName==="TEXTAREA") return;
+    var k=e.key.toLowerCase();
+    if(k==="?"&&!g){e.preventDefault();toggleKbd();return}
+    if(k==="escape"){
+      document.getElementById("kbdOverlay").classList.remove("open");
+      var mp=document.querySelector(".manual-panel");if(mp)mp.classList.remove("open");
+      var mo=document.querySelector(".manual-overlay");if(mo)mo.style.display="none";
+      return;
+    }
+    if(k==="g"&&!g){g=true;t=setTimeout(function(){g=false},800);return}
+    if(g){g=false;clearTimeout(t);
+      if(k==="h")location.href="welcome-home.html";
+      else if(k==="s")location.href="settings.html";
+      else if(k==="a")location.href="alerts.html";
+      else if(k==="d")location.href="dashboards.html";
+    }
+  });
+})();
+
+// Auto-open manual if ?manual=1 in URL
+(function(){
+  if(window.location.search.indexOf("manual=1")!==-1){
+    var mp=document.getElementById("manualPanel");
+    var mo=document.getElementById("manualOverlay");
+    if(mp){mp.classList.add("open")}
+    if(mo){mo.style.display="block"}
+  }
+})();
 </script>
 </body>
 </html>

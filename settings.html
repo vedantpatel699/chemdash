@@ -3,11 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ferriq — Home</title>
+<title>Ferriq — Settings</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-/* Ferriq Design System v1.1 — Welcome / Home */
 *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
 :root{
   --gold-800:#463B33;--gold-700:#763D16;--gold-600:#BB6E3D;--gold-500:#E29C57;
@@ -27,11 +26,7 @@
   --font-data:'IBM Plex Mono','SF Mono','Consolas',monospace;
 }
 body{font-family:var(--font-ui);background:var(--surface-page);color:var(--text-primary);overflow:hidden;height:100vh}
-
-/* SHELL */
 .shell{display:grid;grid-template-columns:var(--sidebar-width) 1fr;grid-template-rows:var(--topbar-height) 1fr;height:100vh}
-
-/* SIDEBAR */
 .sidebar{grid-row:1/-1;background:var(--surface-sidebar);box-shadow:var(--shadow-sidebar);display:flex;flex-direction:column;padding-top:16px;z-index:10}
 .sidebar-header{display:flex;align-items:center;gap:10px;padding:0 16px;margin-bottom:24px}
 .sidebar-logo{width:36px;height:36px;flex-shrink:0;text-decoration:none;display:flex;align-items:center}
@@ -63,9 +58,11 @@ body{font-family:var(--font-ui);background:var(--surface-page);color:var(--text-
 .kbd-keys{display:flex;gap:4px}
 kbd{background:var(--gold-100);border:1px solid var(--border-card);border-radius:4px;padding:2px 8px;font-family:var(--font-data);font-size:11px;color:var(--text-secondary)}
 
-
-/* TOPBAR */
 .topbar{background:var(--surface-card);box-shadow:var(--shadow-topbar);display:flex;align-items:center;padding:0 var(--content-margin);justify-content:space-between;z-index:5}
+.breadcrumb{font-size:13px;color:var(--text-secondary)}
+.breadcrumb a{color:var(--text-secondary);text-decoration:none}
+.breadcrumb a:hover{color:var(--gold-600)}
+.breadcrumb span{margin:0 6px;opacity:0.4}
 .brand-name{font-size:16px;font-weight:600;color:var(--text-primary)}
 .brand-env{font-size:13px;color:var(--text-secondary)}
 
@@ -79,50 +76,27 @@ kbd{background:var(--gold-100);border:1px solid var(--border-card);border-radius
 .time-pill.active{background:var(--surface-card);box-shadow:0 1px 3px rgba(0,0,0,0.08);color:var(--text-primary)}
 .avatar{width:32px;height:32px;border-radius:50%;background:var(--gold-600);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#FFF}
 
+.content{padding:var(--content-margin);overflow-y:auto}
 
-/* CONTENT */
-.content{padding:24px var(--content-margin) var(--content-margin);overflow-y:auto}
+.settings-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:var(--tile-gap)}
+.settings-card{background:var(--surface-card);border:1px solid var(--border-card);border-radius:var(--radius-card);box-shadow:var(--shadow-card);padding:20px 24px}
+.settings-cat{font-size:12px;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-secondary);font-weight:600;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--border-card)}
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--gold-100)}
+.setting-row:last-child{border-bottom:none}
+.setting-info{flex:1;min-width:0}
+.setting-label{font-size:13px;font-weight:500;color:var(--text-primary)}
+.setting-desc{font-size:11px;color:var(--text-secondary);margin-top:2px}
+.setting-control{background:var(--gold-100);border:1px solid var(--border-card);border-radius:8px;padding:7px 12px;font-size:12px;font-family:var(--font-ui);color:var(--text-primary);min-width:160px;cursor:pointer}
+.setting-control:focus{outline:none;border-color:var(--gold-500)}
+.setting-input{cursor:text;min-width:200px}
+.save-btn{background:var(--gold-600);color:#FFF;border:none;border-radius:10px;padding:10px 24px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font-ui);transition:background 0.15s}
+.save-btn:hover{background:var(--gold-700)}
+.reset-btn{background:none;color:var(--text-secondary);border:1px solid var(--border-card);border-radius:10px;padding:10px 24px;font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font-ui);transition:all 0.15s}
+.reset-btn:hover{border-color:var(--gold-500);color:var(--text-primary)}
 
-/* GREETING */
-.greeting{font-size:26px;font-weight:700;margin-bottom:6px}
-.greeting-sub{font-size:14px;color:var(--text-secondary);margin-bottom:24px}
-
-/* KPI SUMMARY ROW */
-.summary-strip{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:28px}
-.summary-tile{background:var(--surface-card);border:1px solid var(--border-card);border-radius:var(--radius-card);padding:14px 16px;box-shadow:var(--shadow-card);transition:border-color 0.15s}
-.summary-tile:hover{border-color:var(--gold-500)}
-.summary-tile .st-label{font-size:11px;font-weight:500;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.03em}
-.summary-tile .st-value{font-family:var(--font-data);font-size:22px;font-weight:500;margin-top:4px}
-.summary-tile .st-sub{font-size:11px;color:var(--text-secondary);margin-top:2px}
-
-/* EQUIPMENT GRID */
-.section-heading{font-size:16px;font-weight:600;margin-bottom:4px}
-.section-sub{font-size:13px;color:var(--text-secondary);margin-bottom:20px}
-.equipment-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:var(--tile-gap);margin-bottom:32px}
-.eq-card{min-height:200px;background:var(--surface-card);border:1px solid var(--border-card);border-radius:var(--radius-card);box-shadow:var(--shadow-card);padding:20px;display:flex;flex-direction:column;position:relative;cursor:pointer;transition:border-color 0.15s,transform 0.2s,box-shadow 0.2s;text-decoration:none;color:inherit}
-.eq-card:hover{border-color:var(--gold-500);transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.08),0 0 20px rgba(0,0,0,0.04)}
-.eq-icon{width:40px;height:40px;border-radius:50%;background:var(--gold-300);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;color:var(--gold-600);margin-bottom:12px}
-.eq-name{font-size:14px;font-weight:600;margin-bottom:2px}
-.eq-unit{font-size:12px;color:var(--text-secondary);margin-bottom:auto}
-.eq-desc{font-size:12px;color:var(--text-secondary);line-height:1.4}
-.eq-footer{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
-.eq-arrow{font-size:16px;color:var(--gold-200);transition:color 0.15s,transform 0.15s}
-.eq-card:hover .eq-arrow{color:var(--gold-600);transform:translateX(2px)}
-
-/* RECENT ACTIVITY */
-.activity-section{margin-top:8px}
-.activity-list{display:flex;flex-direction:column;gap:6px}
-.activity-row{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--surface-card);border:1px solid var(--border-card);border-radius:12px;font-size:13px}
-.activity-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
-.activity-dot.ok{background:var(--status-normal)}
-.activity-dot.advisory{background:var(--status-advisory)}
-.activity-dot.info{background:var(--gold-500)}
-.activity-msg{flex:1;color:var(--text-primary)}
-.activity-time{font-size:11px;color:var(--text-secondary);white-space:nowrap;font-family:var(--font-data)}
 </style>
 </head>
 <body>
-
 <div class="shell">
   <nav class="sidebar">
     <div class="sidebar-header">
@@ -131,7 +105,7 @@ kbd{background:var(--gold-100);border:1px solid var(--border-card);border-radius
     </div>
 
     <div class="nav-section-label">Core</div>
-    <a class="nav-item active" href="welcome-home.html">
+    <a class="nav-item" href="welcome-home.html">
       <span class="nav-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7.5L9 2l7 5.5V15a1.5 1.5 0 01-1.5 1.5h-11A1.5 1.5 0 012 15V7.5z"/><path d="M6.5 16.5V10h5v6.5"/></svg></span>
       Home
     </a>
@@ -174,7 +148,7 @@ kbd{background:var(--gold-100);border:1px solid var(--border-card);border-radius
 
     <div class="sidebar-divider"></div>
 
-    <a class="nav-item" href="settings.html">
+    <a class="nav-item active" href="settings.html">
       <span class="nav-icon"><svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3"/><path d="M14.7 11.1a1.2 1.2 0 00.2 1.3l.04.04a1.44 1.44 0 11-2.04 2.04l-.04-.04a1.2 1.2 0 00-1.3-.2 1.2 1.2 0 00-.72 1.1v.12a1.44 1.44 0 11-2.88 0v-.06a1.2 1.2 0 00-.78-1.1 1.2 1.2 0 00-1.3.2l-.04.04a1.44 1.44 0 11-2.04-2.04l.04-.04a1.2 1.2 0 00.2-1.3 1.2 1.2 0 00-1.1-.72H3.44a1.44 1.44 0 110-2.88h.06a1.2 1.2 0 001.1-.78 1.2 1.2 0 00-.2-1.3l-.04-.04a1.44 1.44 0 112.04-2.04l.04.04a1.2 1.2 0 001.3.2h.06a1.2 1.2 0 00.72-1.1V3.44a1.44 1.44 0 112.88 0v.06a1.2 1.2 0 00.72 1.1 1.2 1.2 0 001.3-.2l.04-.04a1.44 1.44 0 112.04 2.04l-.04.04a1.2 1.2 0 00-.2 1.3v.06a1.2 1.2 0 001.1.72h.12a1.44 1.44 0 110 2.88h-.06a1.2 1.2 0 00-1.1.72z"/></svg></span>
       Settings
     </a>
@@ -187,11 +161,9 @@ kbd{background:var(--gold-100);border:1px solid var(--border-card);border-radius
       </div>
     </div>
   </nav>
-
   <header class="topbar">
     <div class="topbar-left">
-      <span class="brand-name"><span style="color:var(--gold-600);font-weight:700">Fe</span>rriq</span>
-      <span class="brand-env">Portfolio</span>
+      <div class="breadcrumb"><a href="welcome-home.html">Home</a><span>/</span>Settings</div>
     </div>
     <div class="topbar-right">
       
@@ -201,51 +173,111 @@ kbd{background:var(--gold-100);border:1px solid var(--border-card);border-radius
       <div class="avatar">VP</div>
     </div>
   </header>
-
   <main class="content">
-    <h1 class="greeting" id="greeting"></h1>
-    <p class="greeting-sub" id="greetingSub"></p>
+    <h1 style="font-size:22px;font-weight:700;margin-bottom:4px">Settings</h1>
+    <p style="font-size:13px;color:var(--text-secondary);margin-bottom:24px">Configure display preferences, chart defaults, and data options</p>
 
-    <!-- KPI SUMMARY STRIP -->
-    <div class="summary-strip">
-      <div class="summary-tile">
-        <div class="st-label">Equipment Online</div>
-        <div class="st-value" style="color:var(--status-normal)">5 / 5</div>
-        <div class="st-sub">All models operational</div>
+    <div class="settings-grid">
+      <!-- DISPLAY -->
+      <div class="settings-card">
+        <h3 class="settings-cat">Display</h3>
+        <div class="setting-row">
+          <div class="setting-info"><div class="setting-label">Theme</div><div class="setting-desc">Choose your preferred color scheme</div></div>
+          <select class="setting-control" id="setTheme"><option value="light" selected>Light</option><option value="dark">Dark</option><option value="system">System</option></select>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info"><div class="setting-label">Engineering Units</div><div class="setting-desc">Unit system for all calculations and displays</div></div>
+          <select class="setting-control" id="setUnits"><option value="si" selected>SI (Metric)</option><option value="imperial">Imperial (US)</option></select>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info"><div class="setting-label">Decimal Precision</div><div class="setting-desc">Number of decimal places shown</div></div>
+          <select class="setting-control" id="setPrecision"><option value="1">1 decimal</option><option value="2" selected>2 decimals</option><option value="3">3 decimals</option><option value="4">4 decimals</option></select>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info"><div class="setting-label">Timezone</div><div class="setting-desc">Timestamp display timezone</div></div>
+          <select class="setting-control" id="setTz"><option value="local" selected>Local (browser)</option><option value="utc">UTC</option><option value="americas">Americas/Denver</option></select>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info"><div class="setting-label">Date Format</div><div class="setting-desc">How dates appear in charts and tables</div></div>
+          <select class="setting-control" id="setDateFmt"><option value="mdy" selected>MM/DD/YYYY</option><option value="dmy">DD/MM/YYYY</option><option value="ymd">YYYY-MM-DD (ISO)</option></select>
+        </div>
       </div>
-      <div class="summary-tile">
-        <div class="st-label">Active Alerts</div>
-        <div class="st-value">0</div>
-        <div class="st-sub">No active alarms</div>
+
+      <!-- CHARTS -->
+      <div class="settings-card">
+        <h3 class="settings-cat">Charts</h3>
+        <div class="setting-row">
+          <div class="setting-info"><div class="setting-label">Default Time Range</div><div class="setting-desc">Initial time window when opening a dashboard</div></div>
+          <select class="setting-control" id="setRange"><option value="1h">1 hour</option><option value="6h">6 hours</option><option value="24h" selected>24 hours</option><option value="7d">7 days</option><option value="30d">30 days</option></select>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info"><div class="setting-label">Auto-Refresh</div><div class="setting-desc">How often to poll for new data</div></div>
+          <select class="setting-control" id="setRefresh"><option value="off">Off</option><option value="30">30 seconds</option><option value="60" selected>1 minute</option><option value="300">5 minutes</option></select>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info"><div class="setting-label">Gridlines</div><div class="setting-desc">Show or hide chart gridlines</div></div>
+          <select class="setting-control" id="setGrid"><option value="on" selected>Visible</option><option value="off">Hidden</option></select>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info"><div class="setting-label">Line Thickness</div><div class="setting-desc">Trend line stroke width in charts</div></div>
+          <select class="setting-control" id="setLineW"><option value="1">Thin (1px)</option><option value="1.5" selected>Normal (1.5px)</option><option value="2">Medium (2px)</option><option value="3">Bold (3px)</option></select>
+        </div>
       </div>
-      <div class="summary-tile">
-        <div class="st-label">Last Data Refresh</div>
-        <div class="st-value" id="lastRefresh" style="font-size:16px">--</div>
-        <div class="st-sub">Demo data loaded</div>
+
+      <!-- ALERTS & LIMITS -->
+      <div class="settings-card">
+        <h3 class="settings-cat">Alerts & Limits</h3>
+        <div class="setting-row">
+          <div class="setting-info"><div class="setting-label">Notification Sound</div><div class="setting-desc">Play audio on new alarm</div></div>
+          <select class="setting-control" id="setSound"><option value="off" selected>Off</option><option value="on">On</option></select>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info"><div class="setting-label">Alarm De-bounce</div><div class="setting-desc">Seconds before alarm is confirmed (ISA-18.2)</div></div>
+          <select class="setting-control" id="setDebounce"><option value="30">30 seconds</option><option value="60" selected>60 seconds</option><option value="120">120 seconds</option></select>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info"><div class="setting-label">Desktop Notifications</div><div class="setting-desc">Show browser notifications for alarms</div></div>
+          <select class="setting-control" id="setDesktopNotif"><option value="off" selected>Disabled</option><option value="alarm">Alarm & Trip only</option><option value="all">All severities</option></select>
+        </div>
       </div>
-      <div class="summary-tile">
-        <div class="st-label">System Status</div>
-        <div class="st-value" style="color:var(--status-normal)">&#9679; Normal</div>
-        <div class="st-sub">All checks passing</div>
+
+      <!-- DATA -->
+      <div class="settings-card">
+        <h3 class="settings-cat">Data</h3>
+        <div class="setting-row">
+          <div class="setting-info"><div class="setting-label">CSV Column Mapping</div><div class="setting-desc">How uploaded CSV columns map to tag names</div></div>
+          <select class="setting-control" id="setCsvMap"><option value="auto" selected>Auto-detect</option><option value="strict">Strict match</option></select>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info"><div class="setting-label">Data Retention</div><div class="setting-desc">How long processed data is stored in browser</div></div>
+          <select class="setting-control" id="setRetention"><option value="session">This session only</option><option value="7d" selected>7 days</option><option value="30d">30 days</option><option value="forever">Until cleared</option></select>
+        </div>
+      </div>
+
+      <!-- ACCOUNT -->
+      <div class="settings-card">
+        <h3 class="settings-cat">Account</h3>
+        <div class="setting-row">
+          <div class="setting-info"><div class="setting-label">Display Name</div><div class="setting-desc">Shown in activity log and reports</div></div>
+          <input type="text" class="setting-control setting-input" value="Vedant Patel" id="setName"/>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info"><div class="setting-label">Role</div><div class="setting-desc">Your organizational role</div></div>
+          <input type="text" class="setting-control setting-input" value="Process Engineer" id="setRole"/>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info"><div class="setting-label">Email</div><div class="setting-desc">For scheduled report delivery</div></div>
+          <input type="email" class="setting-control setting-input" value="vedantpatel699@gmail.com" id="setEmail"/>
+        </div>
       </div>
     </div>
 
-    <!-- EQUIPMENT DASHBOARDS -->
-    <div id="equipSection">
-      <h2 class="section-heading">Equipment Dashboards</h2>
-      <p class="section-sub">Select a model to view its detailed monitoring dashboard</p>
-    </div>
-    <div class="equipment-grid" id="equipGrid"></div>
-
-    <!-- RECENT ACTIVITY -->
-    <div class="activity-section">
-      <h2 class="section-heading">Recent Activity</h2>
-      <p class="section-sub" style="margin-bottom:12px">Latest system events</p>
-      <div class="activity-list" id="activityList"></div>
+    <div style="margin-top:20px;display:flex;gap:12px">
+      <button class="save-btn" onclick="alert('Settings saved (demo)')">Save Changes</button>
+      <button class="reset-btn" onclick="location.reload()">Reset to Defaults</button>
     </div>
   </main>
 </div>
-
 
 <div class="kbd-overlay" id="kbdOverlay">
   <div class="kbd-modal">
@@ -265,40 +297,6 @@ kbd{background:var(--gold-100);border:1px solid var(--border-card);border-radius
   </div>
 </div>
 
-
-<script>
-const equipment = [
-  {name:'Air Blower',unit:'Dual-Train Centrifugal',desc:'ASME PTC 10 efficiency, ISO 10816 vibration, bearing health',icon:'AB',href:'air-blower.html'},
-  {name:'Fired Heater Efficiency',unit:'Gas-Fired Process Heater',desc:'Direct & indirect efficiency, loss breakdown, excess air monitoring',icon:'FH',href:'fired-heater.html'},
-  {name:'Shell & Tube Exchanger',unit:'TEMA RCB Crude Preheater',desc:'LMTD effectiveness, fouling tracking, \u0394P monitoring',icon:'HX',href:'shell-tube-exchanger.html'},
-  {name:'Membrane Analyzer',unit:'H\u2082 Recovery Module M-301',desc:'Permeance tracking, H\u2082 recovery & purity, selectivity',icon:'MA',href:'membrane-analyzer.html'},
-  {name:'Furnace Skin Temp',unit:'Radiant Section F-201',desc:'Tube skin prediction, residual drift detection, TMT classification',icon:'FT',href:'furnace-skin-temp.html'},
-];
-
-const hour = new Date().getHours();
-document.getElementById('greeting').textContent = hour<12?'Good morning':hour<18?'Good afternoon':'Good evening';
-const now = new Date();
-document.getElementById('greetingSub').textContent = now.toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-document.getElementById('lastRefresh').textContent = now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
-
-const grid = document.getElementById('equipGrid');
-equipment.forEach(eq => {
-  grid.innerHTML += `<a class="eq-card" href="${eq.href}"><div class="eq-icon">${eq.icon}</div><div class="eq-name">${eq.name}</div><div class="eq-unit">${eq.unit}</div><div class="eq-desc">${eq.desc}</div><div class="eq-footer"><span></span><span class="eq-arrow">\u2192</span></div></a>`;
-});
-
-// Recent activity (demo)
-const activities = [
-  {dot:'ok',msg:'Air Blower C-101A — efficiency within normal range (76.2%)',time:'2 min ago'},
-  {dot:'info',msg:'Fired Heater H-401 — demo data loaded successfully',time:'5 min ago'},
-  {dot:'ok',msg:'Shell & Tube Exchanger E-201 — fouling factor Rf = 0.00018',time:'12 min ago'},
-  {dot:'advisory',msg:'Membrane M-301 — H\u2082 recovery at 84.1% (design: 85%)',time:'18 min ago'},
-  {dot:'ok',msg:'Furnace F-201 — predicted skin temp 512\u00b0C (limit: 540\u00b0C)',time:'25 min ago'},
-];
-const al = document.getElementById('activityList');
-activities.forEach(a => {
-  al.innerHTML += `<div class="activity-row"><span class="activity-dot ${a.dot}"></span><span class="activity-msg">${a.msg}</span><span class="activity-time">${a.time}</span></div>`;
-});
-</script>
 
 <script>
 function toggleKbd(){document.getElementById('kbdOverlay').classList.toggle('open')}
@@ -325,6 +323,7 @@ function toggleKbd(){document.getElementById('kbdOverlay').classList.toggle('ope
   });
 })();
 </script>
+
 
 </body>
 </html>
