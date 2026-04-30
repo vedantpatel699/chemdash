@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ferriq — Shell & Tube Exchanger</title>
+<title>Ferriq - Shell & Tube Exchanger</title>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -346,7 +346,7 @@ kbd{background:var(--gold-100);border:1px solid var(--border-card);border-radius
     </div>
 
     <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px">
-      <h1 style="font-size:22px;font-weight:700">Shell & Tube Exchanger — Performance & Fouling</h1>
+      <h1 style="font-size:22px;font-weight:700">Shell & Tube Exchanger - Performance & Fouling</h1>
       <span style="font-size:12px;color:var(--text-secondary)">TEMA · ASME PTC 12-5 · ISO 5167</span>
     </div>
     <p style="font-size:13px;color:var(--text-secondary);margin-bottom:20px">Counter-current heat exchange · E-105</p>
@@ -468,16 +468,16 @@ kbd{background:var(--gold-100);border:1px solid var(--border-card);border-radius
 <div class="manual-overlay" id="manualOverlay"></div>
 <div class="manual-panel" id="manualPanel">
   <div class="manual-panel-header">
-    <h3>Engineering Manual — Shell & Tube Exchanger</h3>
+    <h3>Engineering Manual - Shell & Tube Exchanger</h3>
     <div style="display:flex;align-items:center;gap:4px"><button class="manual-pdf-btn" id="manualPdf">Download PDF</button><button class="manual-panel-close" id="manualClose">&times;</button></div>
   </div>
   <div class="manual-panel-body">
     <h3>1. Purpose & Scope</h3>
     <p>Shell-and-tube heat exchanger monitoring dashboard computing overall heat-transfer coefficient U and fouling resistance R<sub>f</sub>, with energy balance and pressure-drop trending per ASME PTC 12-5 and TEMA standards.</p>
     <h3>2. Key Standards</h3>
-    <p><strong>ASME PTC 12-5</strong> — Single-Phase Heat Exchangers. Defines U measurement, LMTD correction F-factors, and fouling-resistance protocols.</p>
-    <p><strong>TEMA</strong> — Tubular Exchanger Manufacturers Association. Classifies shell & tube types by shell-pass/tube-pass count. Each configuration has a distinct LMTD correction factor F range: 1-2 shell (0.85-0.95, default 0.90), 1-4 shell (0.80-0.92, default 0.85), 2-4 shell (0.82-0.95, default 0.88). Selecting a TEMA type auto-sets F; select "Custom F" to override.</p>
-    <p><strong>ISO 5167</strong> — Flow measurement via orifice / venturi plate in ducts and pipes.</p>
+    <p><strong>ASME PTC 12-5</strong> - Single-Phase Heat Exchangers. Defines U measurement, LMTD correction F-factors, and fouling-resistance protocols.</p>
+    <p><strong>TEMA</strong> - Tubular Exchanger Manufacturers Association. Classifies shell & tube types by shell-pass/tube-pass count. Each configuration has a distinct LMTD correction factor F range: 1-2 shell (0.85-0.95, default 0.90), 1-4 shell (0.80-0.92, default 0.85), 2-4 shell (0.82-0.95, default 0.88). Selecting a TEMA type auto-sets F; select "Custom F" to override.</p>
+    <p><strong>ISO 5167</strong> - Flow measurement via orifice / venturi plate in ducts and pipes.</p>
     <h3>3. Input Tags</h3>
     <p>Timestamp, hot-stream inlet/outlet T and flow, cold-stream inlet/outlet T and flow, Cp values, shell DP, tube DP.</p>
     <h3>4. Calculations</h3>
@@ -584,7 +584,7 @@ currentRows=DEMO_SERIES;document.getElementById("upStatus").textContent="Demo au
 document.getElementById("manualPdf").addEventListener("click",function(){
   var body=document.querySelector(".manual-panel-body").innerHTML;
   var win=window.open("","_blank");
-  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Engineering Manual — Shell & Tube Exchanger</title>'+
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Engineering Manual - Shell & Tube Exchanger</title>'+
     '<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">'+
     '<style>body{font-family:\'IBM Plex Sans\',-apple-system,sans-serif;font-size:13px;line-height:1.7;color:#32302F;max-width:700px;margin:40px auto;padding:0 24px}'+
     'h1{font-size:20px;font-weight:700;color:#463B33;border-bottom:2px solid #E29C57;padding-bottom:8px;margin-bottom:24px}'+
@@ -593,7 +593,7 @@ document.getElementById("manualPdf").addEventListener("click",function(){
     'code{background:#F7F6F2;padding:2px 6px;border-radius:4px;font-family:\'IBM Plex Mono\',monospace;font-size:12px}'+
     'strong{color:#463B33}'+
     '@media print{body{margin:20px}@page{margin:1.5cm}}</style></head><body>'+
-    '<h1>Engineering Manual — Shell & Tube Exchanger</h1>'+body+'</body></html>');
+    '<h1>Engineering Manual - Shell & Tube Exchanger</h1>'+body+'</body></html>');
   win.document.close();
   setTimeout(function(){win.print();},400);
 });
@@ -632,7 +632,7 @@ document.querySelectorAll(".tab").forEach(function(t){
   });
 });
 
-// Time range pills — filter displayed chart data
+// Time range pills - filter displayed chart data
 (function(){
   var allRows=null;
   document.querySelectorAll(".time-pill").forEach(function(pill){

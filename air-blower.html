@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Ferriq — Air Blower</title>
+<title>Ferriq - Air Blower</title>
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -352,7 +352,7 @@ kbd{background:var(--gold-100);border:1px solid var(--border-card);border-radius
     </div>
 
     <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px">
-      <h1 style="font-size:22px;font-weight:700">Air Blower — Performance & Health</h1>
+      <h1 style="font-size:22px;font-weight:700">Air Blower - Performance & Health</h1>
       <span style="font-size:12px;color:var(--text-secondary)">ASME PTC 10 · ISO 10816-3</span>
     </div>
     <p style="font-size:13px;color:var(--text-secondary);margin-bottom:20px">Dual-train centrifugal blower · K-101 A/B</p>
@@ -406,7 +406,7 @@ kbd{background:var(--gold-100);border:1px solid var(--border-card);border-radius
           <div class="card-header">Trends<span style="font-weight:400;font-size:11px;color:var(--text-secondary);margin-left:8px">(batch mode)</span></div>
           <div class="card-body">
             <div class="chart-grid">
-              <div class="chart-box"><h4>Efficiency (%) — polytropic · isentropic · fluid</h4><div class="chart-canvas-wrap"><canvas id="chart-eff"></canvas></div></div>
+              <div class="chart-box"><h4>Efficiency (%) - polytropic · isentropic · fluid</h4><div class="chart-canvas-wrap"><canvas id="chart-eff"></canvas></div></div>
               <div class="chart-box"><h4>Shaft power (kW) & flow (Nm3/hr)</h4><div class="chart-canvas-wrap"><canvas id="chart-power"></canvas></div></div>
               <div class="chart-box"><h4>Max vibration (mm/s)</h4><div class="chart-canvas-wrap"><canvas id="chart-vib"></canvas></div></div>
               <div class="chart-box"><h4>Max bearing T (C) & dP (bar)</h4><div class="chart-canvas-wrap"><canvas id="chart-brg"></canvas></div></div>
@@ -456,16 +456,16 @@ kbd{background:var(--gold-100);border:1px solid var(--border-card);border-radius
 <div class="manual-overlay" id="manualOverlay"></div>
 <div class="manual-panel" id="manualPanel">
   <div class="manual-panel-header">
-    <h3>Engineering Manual — Air Blower</h3>
+    <h3>Engineering Manual - Air Blower</h3>
     <div style="display:flex;align-items:center;gap:4px"><button class="manual-pdf-btn" id="manualPdf">Download PDF</button><button class="manual-panel-close" id="manualClose">&times;</button></div>
   </div>
   <div class="manual-panel-body">
     <h3>1. Purpose & Scope</h3>
     <p>Dual-train centrifugal blower monitoring dashboard computing polytropic, isentropic, and fluid-power efficiencies per ASME PTC 10, with vibration monitoring per ISO 10816-3 Group 1 and bearing temperature tracking.</p>
     <h3>2. Key Standards</h3>
-    <p><strong>ASME PTC 10</strong> — Performance Test Code on Compressors and Exhausters. §5.4 isentropic efficiency, §5.4a polytropic efficiency.</p>
-    <p><strong>ISO 10816-3</strong> — Vibration evaluation of machines. Group 1: large machines &gt; 300 kW on rigid foundations. Zone boundaries: B/C = 4.5 mm/s (advisory), C/D = 7.1 mm/s (alarm), D = 11.0 mm/s (trip).</p>
-    <p><strong>API 617</strong> — Axial and Centrifugal Compressors. Referenced for polytropic efficiency as primary metric.</p>
+    <p><strong>ASME PTC 10</strong> - Performance Test Code on Compressors and Exhausters. §5.4 isentropic efficiency, §5.4a polytropic efficiency.</p>
+    <p><strong>ISO 10816-3</strong> - Vibration evaluation of machines. Group 1: large machines &gt; 300 kW on rigid foundations. Zone boundaries: B/C = 4.5 mm/s (advisory), C/D = 7.1 mm/s (alarm), D = 11.0 mm/s (trip).</p>
+    <p><strong>API 617</strong> - Axial and Centrifugal Compressors. Referenced for polytropic efficiency as primary metric.</p>
     <h3>3. Input Tags (29 variables)</h3>
     <p>Motor currents (A/B), suction/discharge pressures (A/B), controller setpoints, bypass positions, filter dP, vibration (8 points: A1-4, B1-4), bearing temps (4 points: A1-2, B1-2), total flow, discharge temps, suction temp.</p>
     <h3>4. Calculations</h3>
@@ -481,7 +481,7 @@ kbd{background:var(--gold-100);border:1px solid var(--border-card);border-radius
 
 <script>
 // ═══════════════════════════════════════════════════════
-// TAG ALIASES — mirrors engine.TAG_ALIASES
+// TAG ALIASES - mirrors engine.TAG_ALIASES
 // ═══════════════════════════════════════════════════════
 const TAG_ALIASES={timestamp:["timestamp","Timestamp","Date","date","Time"],motor_current_a:["motor_current_a","Motor Current A"],motor_current_b:["motor_current_b","Motor Current B"],suction_pressure_a:["suction_pressure_a","Suction Press A"],suction_pressure_b:["suction_pressure_b","Suction Press B"],discharge_pressure_a:["discharge_pressure_a","Discharge Press A"],discharge_pressure_b:["discharge_pressure_b","Discharge Press B"],controller_sp_a:["controller_sp_a","Controller SP A"],controller_sp_b:["controller_sp_b","Controller SP B"],bypass_op_a:["bypass_op_a","Bypass OP A"],bypass_op_b:["bypass_op_b","Bypass OP B"],filter_dp_a:["filter_dp_a","Filter DP A"],filter_dp_b:["filter_dp_b","Filter DP B"],total_flow:["total_flow","Total Flow"],suction_temp:["suction_temp","Suction Temp"],discharge_temp_a:["discharge_temp_a","Discharge Temp A"],discharge_temp_b:["discharge_temp_b","Discharge Temp B"],vibration_a_1:["vibration_a_1","Vibration A1"],vibration_a_2:["vibration_a_2","Vibration A2"],vibration_a_3:["vibration_a_3","Vibration A3"],vibration_a_4:["vibration_a_4","Vibration A4"],vibration_b_1:["vibration_b_1","Vibration B1"],vibration_b_2:["vibration_b_2","Vibration B2"],vibration_b_3:["vibration_b_3","Vibration B3"],vibration_b_4:["vibration_b_4","Vibration B4"],bearing_temp_a_1:["bearing_temp_a_1","Bearing Temp A1"],bearing_temp_a_2:["bearing_temp_a_2","Bearing Temp A2"],bearing_temp_b_1:["bearing_temp_b_1","Bearing Temp B1"],bearing_temp_b_2:["bearing_temp_b_2","Bearing Temp B2"]};
 
@@ -490,7 +490,7 @@ function num(v){if(v===null||v===undefined||v==="")return NaN;if(typeof v==="num
 function parseTs(v){if(!v)return null;const s=String(v).trim();const m=s.match(/^(\d{4})[-\/](\d{1,2})[-\/](\d{1,2})[ T](\d{1,2}):(\d{2})(?::(\d{2}))?$/);if(m)return new Date(+m[1],+m[2]-1,+m[3],+m[4],+m[5],+(m[6]||0));const m2=s.match(/^(\d{1,2})[-\/](\d{1,2})[-\/](\d{2,4})\s+(\d{1,2}):(\d{2})$/);if(m2){let y=+m2[3];if(y<100)y+=2000;return new Date(y,+m2[1]-1,+m2[2],+m2[4],+m2[5]);}const d=new Date(s);return isNaN(d.getTime())?null:d;}
 
 // ═══════════════════════════════════════════════════════
-// CORE MATH — mirrors engine.py §4
+// CORE MATH - mirrors engine.py §4
 // ═══════════════════════════════════════════════════════
 function shaftPowerKw(V,I,PF){return Math.sqrt(3)*V*I*PF/1000;}
 function normalizePressures(p1kpaa,p2kpag,patm){return[p1kpaa/100,p2kpag/100+patm];}
@@ -498,7 +498,7 @@ function fluidPowerKw(Q,dP){return Q*dP/36;}
 function isentropicEff(T1,T2,P1,P2,k){if(!(P2>P1&&T2>T1))return NaN;const exp=(k-1)/k;return T1*(Math.pow(P2/P1,exp)-1)/(T2-T1);}
 function polytropicEff(T1,T2,P1,P2,k){if(!(P2>P1&&T2>T1))return NaN;const sigma=Math.log(T2/T1)/Math.log(P2/P1);if(sigma<=0)return NaN;return((k-1)/k)/sigma;}
 function detectActiveBlower(ca,cb,mode,min){if(mode==="A")return(!isNaN(ca)&&ca>min)?"A":null;if(mode==="B")return(!isNaN(cb)&&cb>min)?"B":null;const aOn=!isNaN(ca)&&ca>min,bOn=!isNaN(cb)&&cb>min;if(aOn&&bOn)return ca>=cb?"A":"B";if(aOn)return"A";if(bOn)return"B";return null;}
-function buildAlerts(vmax,bmax,fdp,dp,byp,p2,sp,lim){const a=[];const ISO="ISO 10816-3, Group 1";if(!isNaN(vmax)){if(vmax>=lim.vib_trip)a.push({severity:"trip",message:`Vibration ${vmax.toFixed(2)} mm/s exceeds trip ${lim.vib_trip} mm/s (Zone D).`,source:ISO});else if(vmax>=lim.vib_alarm)a.push({severity:"alarm",message:`Vibration ${vmax.toFixed(2)} mm/s exceeds alarm ${lim.vib_alarm} mm/s (Zone C/D).`,source:ISO});else if(vmax>=lim.vib_adv)a.push({severity:"advisory",message:`Vibration ${vmax.toFixed(2)} mm/s above advisory ${lim.vib_adv} mm/s (Zone B/C).`,source:ISO});}if(!isNaN(bmax)){if(bmax>=lim.brg_trip)a.push({severity:"trip",message:`Bearing T ${bmax.toFixed(1)} C exceeds trip ${lim.brg_trip} C.`,source:"bearing datasheet"});else if(bmax>=lim.brg_alarm)a.push({severity:"alarm",message:`Bearing T ${bmax.toFixed(1)} C exceeds alarm ${lim.brg_alarm} C.`,source:"bearing datasheet"});else if(bmax>=lim.brg_adv)a.push({severity:"advisory",message:`Bearing T ${bmax.toFixed(1)} C above advisory ${lim.brg_adv} C.`,source:"bearing datasheet"});}if(!isNaN(fdp)&&fdp>lim.filter_dp)a.push({severity:"advisory",message:`Filter dP ${fdp.toFixed(3)} bar above ${lim.filter_dp} bar.`,source:"plant setpoint"});if(!isNaN(dp)&&dp>lim.blower_dp)a.push({severity:"advisory",message:`Blower dP ${dp.toFixed(3)} bar above design ${lim.blower_dp} bar.`,source:"plant setpoint"});if(!isNaN(byp)&&byp>lim.bypass_max)a.push({severity:"advisory",message:`Bypass ${byp.toFixed(1)}% above ${lim.bypass_max}%.`,source:"plant setpoint"});if(!isNaN(byp)&&byp<5&&!isNaN(p2)&&!isNaN(sp)&&p2<sp)a.push({severity:"advisory",message:"Bypass closed & discharge below setpoint — at capacity.",source:"control narrative"});return a;}
+function buildAlerts(vmax,bmax,fdp,dp,byp,p2,sp,lim){const a=[];const ISO="ISO 10816-3, Group 1";if(!isNaN(vmax)){if(vmax>=lim.vib_trip)a.push({severity:"trip",message:`Vibration ${vmax.toFixed(2)} mm/s exceeds trip ${lim.vib_trip} mm/s (Zone D).`,source:ISO});else if(vmax>=lim.vib_alarm)a.push({severity:"alarm",message:`Vibration ${vmax.toFixed(2)} mm/s exceeds alarm ${lim.vib_alarm} mm/s (Zone C/D).`,source:ISO});else if(vmax>=lim.vib_adv)a.push({severity:"advisory",message:`Vibration ${vmax.toFixed(2)} mm/s above advisory ${lim.vib_adv} mm/s (Zone B/C).`,source:ISO});}if(!isNaN(bmax)){if(bmax>=lim.brg_trip)a.push({severity:"trip",message:`Bearing T ${bmax.toFixed(1)} C exceeds trip ${lim.brg_trip} C.`,source:"bearing datasheet"});else if(bmax>=lim.brg_alarm)a.push({severity:"alarm",message:`Bearing T ${bmax.toFixed(1)} C exceeds alarm ${lim.brg_alarm} C.`,source:"bearing datasheet"});else if(bmax>=lim.brg_adv)a.push({severity:"advisory",message:`Bearing T ${bmax.toFixed(1)} C above advisory ${lim.brg_adv} C.`,source:"bearing datasheet"});}if(!isNaN(fdp)&&fdp>lim.filter_dp)a.push({severity:"advisory",message:`Filter dP ${fdp.toFixed(3)} bar above ${lim.filter_dp} bar.`,source:"plant setpoint"});if(!isNaN(dp)&&dp>lim.blower_dp)a.push({severity:"advisory",message:`Blower dP ${dp.toFixed(3)} bar above design ${lim.blower_dp} bar.`,source:"plant setpoint"});if(!isNaN(byp)&&byp>lim.bypass_max)a.push({severity:"advisory",message:`Bypass ${byp.toFixed(1)}% above ${lim.bypass_max}%.`,source:"plant setpoint"});if(!isNaN(byp)&&byp<5&&!isNaN(p2)&&!isNaN(sp)&&p2<sp)a.push({severity:"advisory",message:"Bypass closed & discharge below setpoint - at capacity.",source:"control narrative"});return a;}
 function rollUp(alerts){if(alerts.some(x=>x.severity==="trip"))return"trip";if(alerts.some(x=>x.severity==="alarm"))return"alarm";if(alerts.some(x=>x.severity==="advisory"))return"advisory";return"ok";}
 
 // ═══════════════════════════════════════════════════════
@@ -572,7 +572,7 @@ currentRows=DEMO_SERIES;document.getElementById("upStatus").textContent="Demo au
 document.getElementById("manualPdf").addEventListener("click",function(){
   var body=document.querySelector(".manual-panel-body").innerHTML;
   var win=window.open("","_blank");
-  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Engineering Manual — Air Blower</title>'+
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Engineering Manual - Air Blower</title>'+
     '<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">'+
     '<style>body{font-family:\'IBM Plex Sans\',-apple-system,sans-serif;font-size:13px;line-height:1.7;color:#32302F;max-width:700px;margin:40px auto;padding:0 24px}'+
     'h1{font-size:20px;font-weight:700;color:#463B33;border-bottom:2px solid #E29C57;padding-bottom:8px;margin-bottom:24px}'+
@@ -581,7 +581,7 @@ document.getElementById("manualPdf").addEventListener("click",function(){
     'code{background:#F7F6F2;padding:2px 6px;border-radius:4px;font-family:\'IBM Plex Mono\',monospace;font-size:12px}'+
     'strong{color:#463B33}'+
     '@media print{body{margin:20px}@page{margin:1.5cm}}</style></head><body>'+
-    '<h1>Engineering Manual — Air Blower</h1>'+body+'</body></html>');
+    '<h1>Engineering Manual - Air Blower</h1>'+body+'</body></html>');
   win.document.close();
   setTimeout(function(){win.print();},400);
 });
@@ -620,7 +620,7 @@ document.querySelectorAll(".tab").forEach(function(t){
   });
 });
 
-// Time range pills — filter displayed chart data
+// Time range pills - filter displayed chart data
 (function(){
   var allRows=null;
   document.querySelectorAll(".time-pill").forEach(function(pill){
